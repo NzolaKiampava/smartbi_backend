@@ -1,0 +1,530 @@
+{
+  "info": {
+    "name": "SmartBI SUPER_ADMIN Tests",
+    "description": "Comprehensive testing collection for SUPER_ADMIN functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "SUPER_ADMIN Authentication",
+      "item": [
+        {
+          "name": "Login SUPER_ADMIN to Demo Company",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.login && response.data.login.data) {",
+                  "        pm.collectionVariables.set('superAdminToken', response.data.login.data.tokens.accessToken);",
+                  "        pm.collectionVariables.set('demoCompanyId', response.data.login.data.company.id);",
+                  "        console.log('SUPER_ADMIN token saved:', response.data.login.data.tokens.accessToken.substring(0, 20) + '...');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation LoginSuperAdmin { login(input: { email: \\\"superadmin@smartbi.com\\\", password: \\\"superadmin123\\\", companySlug: \\\"demo\\\" }) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Login SUPER_ADMIN to TechCorp Company",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.login && response.data.login.data) {",
+                  "        pm.collectionVariables.set('techCorpCompanyId', response.data.login.data.company.id);",
+                  "        console.log('TechCorp Company ID:', response.data.login.data.company.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation LoginSuperAdminTechCorp { login(input: { email: \\\"superadmin@smartbi.com\\\", password: \\\"superadmin123\\\", companySlug: \\\"techcorp\\\" }) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Login Company Admin (Demo) - For Comparison",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.login && response.data.login.data) {",
+                  "        pm.collectionVariables.set('companyAdminToken', response.data.login.data.tokens.accessToken);",
+                  "        console.log('Company Admin token saved');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation LoginCompanyAdmin { login(input: { email: \\\"admin@demo.com\\\", password: \\\"password123\\\", companySlug: \\\"demo\\\" }) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SUPER_ADMIN Company Management",
+      "item": [
+        {
+          "name": "List All Companies (SUPER_ADMIN Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetAllCompanies { companies(pagination: { limit: 10, offset: 0 }) { success message data { companies { id name slug domain isActive subscriptionTier maxUsers createdAt updatedAt } total hasMore } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Try List Companies as Company Admin (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{companyAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetAllCompanies { companies(pagination: { limit: 10, offset: 0 }) { success message data { companies { id name slug domain isActive subscriptionTier maxUsers createdAt updatedAt } total hasMore } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update Any Company (SUPER_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateAnyCompany($id: ID!, $input: UpdateCompanyInput!) { updateCompany(id: $id, input: $input) { success message data { id name subscriptionTier maxUsers updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{demoCompanyId}}\",\n    \"input\": {\n      \"subscriptionTier\": \"PROFESSIONAL\",\n      \"maxUsers\": 25\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SUPER_ADMIN User Management",
+      "item": [
+        {
+          "name": "List All Users Across Companies",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.users && response.data.users.data) {",
+                  "        const users = response.data.users.data.users;",
+                  "        if (users && users.length > 0) {",
+                  "            // Find a test user (not super admin) to use for updates",
+                  "            const testUser = users.find(u => u.role !== 'SUPER_ADMIN' && u.email.includes('demo.com'));",
+                  "            if (testUser) {",
+                  "                pm.collectionVariables.set('testUserId', testUser.id);",
+                  "                console.log('Test user ID saved:', testUser.id, 'Email:', testUser.email);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetAllUsers { users(pagination: { limit: 20, offset: 0 }) { success message data { users { id email firstName lastName role companyId isActive emailVerified createdAt } total hasMore } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Try List All Users as Company Admin (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{companyAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetAllUsers { users(pagination: { limit: 20, offset: 0 }) { success message data { users { id email firstName lastName role companyId isActive emailVerified createdAt } total hasMore } errors } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update Any User (SUPER_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateAnyUser($id: ID!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success message data { id email role isActive updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{testUserId}}\",\n    \"input\": {\n      \"firstName\": \"Updated by SuperAdmin\",\n      \"role\": \"MANAGER\",\n      \"isActive\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Change User Role to COMPANY_ADMIN (SUPER_ADMIN Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation PromoteUserToAdmin($userId: ID!, $role: UserRole!) { changeUserRole(userId: $userId, role: $role) { success message data { id email role updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{testUserId}}\",\n    \"role\": \"COMPANY_ADMIN\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Try Change Role as Company Admin (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{companyAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation TryPromoteUser($userId: ID!, $role: UserRole!) { changeUserRole(userId: $userId, role: $role) { success message data { id email role updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{testUserId}}\",\n    \"role\": \"COMPANY_ADMIN\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cross-Company Access Tests",
+      "item": [
+        {
+          "name": "Get Users from TechCorp (SUPER_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetTechCorpUsers($companyId: ID!) { usersByCompany(companyId: $companyId, pagination: { limit: 10 }) { success message data { users { id email firstName lastName role companyId } total hasMore } errors } }\",\n  \"variables\": {\n    \"companyId\": \"{{techCorpCompanyId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Try Access TechCorp Users as Demo Company Admin (Should Fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{companyAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query TryGetTechCorpUsers($companyId: ID!) { usersByCompany(companyId: $companyId, pagination: { limit: 10 }) { success message data { users { id email firstName lastName role companyId } total hasMore } errors } }\",\n  \"variables\": {\n    \"companyId\": \"{{techCorpCompanyId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Get TechCorp Company Details (SUPER_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetTechCorpCompany($id: ID!) { company(id: $id) { success message data { id name slug domain isActive subscriptionTier maxUsers createdAt updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{techCorpCompanyId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permission Validation Tests",
+      "item": [
+        {
+          "name": "Deactivate User (SUPER_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeactivateAnyUser($userId: ID!) { deactivateUser(userId: $userId) { success message data { id email isActive updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{testUserId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Reactivate User (SUPER_ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ReactivateUser($userId: ID!) { activateUser(userId: $userId) { success message data { id email isActive updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{testUserId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "superAdminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "companyAdminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "demoCompanyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "techCorpCompanyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "testUserId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

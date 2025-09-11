@@ -19,17 +19,56 @@ npm run dev
 ```
 Server should be available at: `http://localhost:4000/graphql`
 
-### 3. Import Postman Collection
-Import the collection file: `testing/SmartBI-Management.postman_collection.json`
+### 3. Import Postman Collections
+Import both collection files:
+- `testing/SmartBI-Management.postman_collection.json` (General management APIs)
+- `testing/SmartBI-SuperAdmin.postman_collection.json` (SUPER_ADMIN specific tests)
+
+## Available Test Accounts
+
+After running the migration, you'll have these test accounts:
+
+### SUPER_ADMIN Account
+- **Email**: superadmin@smartbi.com
+- **Password**: superadmin123
+- **Role**: SUPER_ADMIN
+- **Special Access**: Can manage all companies and users
+
+### Demo Company (slug: demo)
+- **Super Admin**: superadmin@smartbi.com / superadmin123 (can access any company)
+- **Company Admin**: admin@demo.com / password123
+- **Manager**: manager@demo.com / password123
+- **Analyst**: analyst@demo.com / password123
+- **Viewer**: viewer@demo.com / password123
+
+### TechCorp Company (slug: techcorp)
+- **Company Admin**: admin@techcorp.com / password123
+- **Manager**: manager@techcorp.com / password123
+
+**Security Note**: Change all default passwords immediately in production!
 
 ## Testing Workflow
 
 ### Step 1: Authentication
-1. **Login Request**: Use the "Login" request in Authentication folder
-   - Default credentials: `admin@demo.com` / `password123`
-   - Company slug: `demo`
-   - Copy the `accessToken` from response
-   - Set it in Postman variables or manually in Authorization headers
+1. **SUPER_ADMIN Login**: Use `superadmin@smartbi.com` / `superadmin123`
+   - Can login to any company (demo, techcorp)
+   - Gets full access to all operations
+   - Copy the `accessToken` for subsequent requests
+
+2. **Regular User Login**: Use role-specific accounts
+   - Company Admin: `admin@demo.com` / `password123`
+   - Manager: `manager@demo.com` / `password123`
+   - Set tokens in Postman variables or Authorization headers
+
+### Step 2: SUPER_ADMIN Testing
+Use the dedicated SUPER_ADMIN collection (`SmartBI-SuperAdmin.postman_collection.json`):
+
+1. **Cross-Company Access**: Test login to different companies
+2. **Global Company Management**: List and update all companies
+3. **Global User Management**: Manage users across all companies
+4. **Permission Validation**: Verify other roles cannot access SUPER_ADMIN operations
+
+**See detailed guide**: `testing/SUPERADMIN_TESTING_GUIDE.md`
 
 ### Step 2: Company Management Testing
 
@@ -252,20 +291,18 @@ Test these error scenarios:
 3. **Deactivate Last Admin**: Try deactivating the only admin
    - Expected: "Cannot deactivate the last admin"
 
-## Sample Test Data
+## Testing Collections
 
-After running the migration, you'll have these test accounts:
+### Primary Collections:
+1. **SmartBI-Management.postman_collection.json**: General CRUD operations
+2. **SmartBI-SuperAdmin.postman_collection.json**: SUPER_ADMIN specific tests
 
-### Demo Company (slug: demo)
-- **Super Admin**: admin@demo.com / password123
-- **Company Admin**: company.admin@demo.com / password123
-- **Manager**: manager@demo.com / password123
-- **Analyst**: analyst@demo.com / password123
-- **Viewer**: viewer@demo.com / password123
+### Quick Test Sequence:
+1. Run SUPER_ADMIN collection first to test system-wide operations
+2. Run regular management collection with different role tokens
+3. Compare results to verify permission boundaries
 
-### TechCorp Company (slug: techcorp)
-- **Company Admin**: admin@techcorp.com / password123
-- **Manager**: manager@techcorp.com / password123
+For detailed SUPER_ADMIN testing, see: `testing/SUPERADMIN_TESTING_GUIDE.md`
 
 ## Troubleshooting
 

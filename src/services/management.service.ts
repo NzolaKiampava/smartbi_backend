@@ -54,7 +54,7 @@ export class ManagementService {
     }
 
     return {
-      companies: data || [],
+      companies: (data || []).map(company => this.mapCompanyData(company)),
       total: count || 0,
       hasMore: (count || 0) > offset + limit,
     };
