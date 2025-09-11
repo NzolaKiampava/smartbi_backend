@@ -1,0 +1,388 @@
+{
+  "info": {
+    "name": "SmartBI Management APIs",
+    "description": "Complete collection for testing SmartBI management operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation LoginUser($input: LoginInput!) { login(input: $input) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"admin@demo.com\",\n      \"password\": \"password123\",\n      \"companySlug\": \"demo\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Company Management",
+      "item": [
+        {
+          "name": "List Companies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetCompanies($pagination: PaginationInput) { companies(pagination: $pagination) { success message data { companies { id name slug domain isActive subscriptionTier maxUsers createdAt updatedAt } total hasMore } errors } }\",\n  \"variables\": {\n    \"pagination\": {\n      \"limit\": 10,\n      \"offset\": 0,\n      \"search\": \"\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Get Company by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetCompany($id: ID!) { company(id: $id) { success message data { id name slug domain isActive subscriptionTier maxUsers createdAt updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{companyId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Get Company by Slug",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetCompanyBySlug($slug: String!) { companyBySlug(slug: $slug) { success message data { id name slug domain isActive subscriptionTier maxUsers createdAt updatedAt } errors } }\",\n  \"variables\": {\n    \"slug\": \"demo\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateCompany($id: ID!, $input: UpdateCompanyInput!) { updateCompany(id: $id, input: $input) { success message data { id name slug domain isActive subscriptionTier maxUsers updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{companyId}}\",\n    \"input\": {\n      \"name\": \"Updated Company Name\",\n      \"domain\": \"newdomain.com\",\n      \"subscriptionTier\": \"PROFESSIONAL\",\n      \"maxUsers\": 25\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "List All Users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetUsers($pagination: PaginationInput) { users(pagination: $pagination) { success message data { users { id email firstName lastName role companyId isActive emailVerified lastLoginAt createdAt updatedAt } total hasMore } errors } }\",\n  \"variables\": {\n    \"pagination\": {\n      \"limit\": 10,\n      \"offset\": 0,\n      \"search\": \"\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetUser($id: ID!) { user(id: $id) { success message data { id email firstName lastName role companyId isActive emailVerified lastLoginAt createdAt updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{userId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Get Users by Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetUsersByCompany($companyId: ID!, $pagination: PaginationInput) { usersByCompany(companyId: $companyId, pagination: $pagination) { success message data { users { id email firstName lastName role isActive emailVerified createdAt } total hasMore } errors } }\",\n  \"variables\": {\n    \"companyId\": \"{{companyId}}\",\n    \"pagination\": {\n      \"limit\": 10,\n      \"offset\": 0,\n      \"search\": \"\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateUser($id: ID!, $input: UpdateUserInput!) { updateUser(id: $id, input: $input) { success message data { id email firstName lastName role isActive emailVerified updatedAt } errors } }\",\n  \"variables\": {\n    \"id\": \"{{userId}}\",\n    \"input\": {\n      \"firstName\": \"Updated First Name\",\n      \"lastName\": \"Updated Last Name\",\n      \"role\": \"MANAGER\",\n      \"isActive\": true,\n      \"emailVerified\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update User Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateUserSettings($input: UpdateUserSettingsInput!) { updateUserSettings(input: $input) { success message data { id email firstName lastName updatedAt } errors } }\",\n  \"variables\": {\n    \"input\": {\n      \"firstName\": \"New First Name\",\n      \"lastName\": \"New Last Name\",\n      \"email\": \"newemail@example.com\",\n      \"currentPassword\": \"password123\",\n      \"newPassword\": \"newpassword123\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Change User Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ChangeUserRole($userId: ID!, $role: UserRole!) { changeUserRole(userId: $userId, role: $role) { success message data { id email firstName lastName role updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{userId}}\",\n    \"role\": \"ANALYST\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeactivateUser($userId: ID!) { deactivateUser(userId: $userId) { success message data { id email firstName lastName isActive updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{userId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Activate User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ActivateUser($userId: ID!) { activateUser(userId: $userId) { success message data { id email firstName lastName isActive updatedAt } errors } }\",\n  \"variables\": {\n    \"userId\": \"{{userId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:4000/graphql",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "4000",
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "companyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

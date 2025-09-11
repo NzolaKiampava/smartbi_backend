@@ -1,4 +1,5 @@
 import { authTypeDefs } from './auth.schema';
+import { managementTypeDefs } from './management.schema';
 
 export const baseTypeDefs = `#graphql
   type Query {
@@ -17,4 +18,5 @@ export const baseTypeDefs = `#graphql
 export const typeDefs = [
   baseTypeDefs,
   authTypeDefs,
+  managementTypeDefs,
 ];
