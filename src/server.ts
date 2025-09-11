@@ -2,6 +2,7 @@ import express from 'express';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
+import { GraphQLError } from 'graphql';
 import http from 'http';
 import { config } from './config/environment';
 import { testDatabaseConnection } from './config/database';
@@ -47,7 +48,7 @@ async function startServer() {
     typeDefs,
     resolvers,
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
-    formatError: (error) => {
+    formatError: (error: GraphQLError) => {
       console.error('GraphQL Error:', error);
       
       return {
