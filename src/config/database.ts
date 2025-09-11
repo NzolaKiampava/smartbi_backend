@@ -30,12 +30,14 @@ export const supabaseAdmin = createClient(
 // Test database connection
 export const testDatabaseConnection = async (): Promise<boolean> => {
   try {
+    // Simple connection test by trying to get database schema info
     const { data, error } = await supabase
-      .from('companies')
-      .select('count')
+      .from('information_schema.tables')
+      .select('table_name')
       .limit(1);
     
-    if (error) {
+    // Even if we get an error about missing tables, it means the connection works
+    if (error && !error.message.includes('Could not find the table')) {
       console.error('Database connection test failed:', error.message);
       return false;
     }

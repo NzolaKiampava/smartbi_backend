@@ -1,0 +1,13 @@
+{
+  "query": "mutation RegisterUser($input: RegisterInput!) { register(input: $input) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }",
+  "variables": {
+    "input": {
+      "email": "john@testcompany.com",
+      "password": "password123",
+      "firstName": "John",
+      "lastName": "Doe",
+      "companyName": "Test Company",
+      "companySlug": "test-company"
+    }
+  }
+}

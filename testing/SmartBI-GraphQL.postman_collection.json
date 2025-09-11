@@ -1,0 +1,181 @@
+{
+  "info": {
+    "name": "SmartBI GraphQL API",
+    "description": "Collection for testing SmartBI GraphQL backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:4000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation RegisterUser($input: RegisterInput!) { register(input: $input) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"test@example.com\",\n      \"password\": \"password123\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Doe\",\n      \"companyName\": \"Test Company\",\n      \"companySlug\": \"test-company\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "Login User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation LoginUser($input: LoginInput!) { login(input: $input) { success message data { user { id email firstName lastName role } company { id name slug } tokens { accessToken refreshToken expiresIn } } errors } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"admin@demo.com\",\n      \"password\": \"password123\",\n      \"companySlug\": \"demo\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "Get Current User (Me)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query GetMe { me { user { id email firstName lastName role } company { id name slug } } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation RefreshToken($input: RefreshTokenInput!) { refreshToken(input: $input) { success message data { tokens { accessToken refreshToken expiresIn } } errors } }\",\n  \"variables\": {\n    \"input\": {\n      \"refreshToken\": \"{{refreshToken}}\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation Logout { logout { success message } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "Test Invalid Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation LoginUser($input: LoginInput!) { login(input: $input) { success message errors } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"wrong@example.com\",\n      \"password\": \"wrongpassword\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
