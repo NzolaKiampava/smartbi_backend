@@ -1,0 +1,178 @@
+{
+	"info": {
+		"name": "SmartBI - Quick Connection Test",
+		"description": "Collection rápida para testar conexões com bancos externos",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [{"key": "token", "value": "{{auth_token}}", "type": "string"}]
+	},
+	"variable": [
+		{"key": "baseUrl", "value": "http://localhost:4000/graphql", "type": "string"},
+		{"key": "auth_token", "value": "", "type": "string"}
+	],
+	"item": [
+		{
+			"name": "🔐 Quick Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    if (response.data?.login?.token) {",
+							"        pm.collectionVariables.set('auth_token', response.data.login.token);",
+							"        console.log('✅ Login successful, token saved');",
+							"    }",
+							"} else {",
+							"    console.log('❌ Login failed');",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation{login(email:\\\"{{test_email}}\\\",password:\\\"{{test_password}}\\\"){token user{id email firstName lastName}}}\",\"variables\":{}}"
+				},
+				"url": {"raw": "{{baseUrl}}", "host": ["{{baseUrl}}"]}
+			}
+		},
+		{
+			"name": "🐬 Test MySQL Connection",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.data?.testConnection?.success) {",
+							"    console.log('✅ MySQL connection successful');",
+							"    console.log('⏱️ Latency:', response.data.testConnection.latency + 'ms');",
+							"    if (response.data.testConnection.schemaPreview) {",
+							"        console.log('📊 Tables found:', response.data.testConnection.schemaPreview.totalTables);",
+							"    }",
+							"} else {",
+							"    console.log('❌ MySQL connection failed:', response.data?.testConnection?.message);",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation TestConnection($input:DataConnectionInput!){testConnection(input:$input){success message latency schemaPreview{totalTables tables{name}}}}\",\"variables\":{\"input\":{\"name\":\"Quick MySQL Test\",\"type\":\"MYSQL\",\"config\":{\"host\":\"{{mysql_host}}\",\"port\":{{mysql_port}},\"database\":\"{{mysql_database}}\",\"username\":\"{{mysql_username}}\",\"password\":\"{{mysql_password}}\"}}}}"
+				},
+				"url": {"raw": "{{baseUrl}}", "host": ["{{baseUrl}}"]}
+			}
+		},
+		{
+			"name": "🐘 Test PostgreSQL Connection",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.data?.testConnection?.success) {",
+							"    console.log('✅ PostgreSQL connection successful');",
+							"    console.log('⏱️ Latency:', response.data.testConnection.latency + 'ms');",
+							"    if (response.data.testConnection.schemaPreview) {",
+							"        console.log('📊 Tables found:', response.data.testConnection.schemaPreview.totalTables);",
+							"    }",
+							"} else {",
+							"    console.log('❌ PostgreSQL connection failed:', response.data?.testConnection?.message);",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation TestConnection($input:DataConnectionInput!){testConnection(input:$input){success message latency schemaPreview{totalTables tables{name}}}}\",\"variables\":{\"input\":{\"name\":\"Quick PostgreSQL Test\",\"type\":\"POSTGRESQL\",\"config\":{\"host\":\"{{postgres_host}}\",\"port\":{{postgres_port}},\"database\":\"{{postgres_database}}\",\"username\":\"{{postgres_username}}\",\"password\":\"{{postgres_password}}\"}}}}"
+				},
+				"url": {"raw": "{{baseUrl}}", "host": ["{{baseUrl}}"]}
+			}
+		},
+		{
+			"name": "🌐 Test API Connection",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.data?.testConnection?.success) {",
+							"    console.log('✅ API connection successful');",
+							"    console.log('⏱️ Latency:', response.data.testConnection.latency + 'ms');",
+							"} else {",
+							"    console.log('❌ API connection failed:', response.data?.testConnection?.message);",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation TestConnection($input:DataConnectionInput!){testConnection(input:$input){success message latency}}\",\"variables\":{\"input\":{\"name\":\"Quick API Test\",\"type\":\"API_REST\",\"config\":{\"apiUrl\":\"{{api_base_url}}\",\"apiKey\":\"{{api_key}}\",\"headers\":[{\"key\":\"Content-Type\",\"value\":\"application/json\"}]}}}}"
+				},
+				"url": {"raw": "{{baseUrl}}", "host": ["{{baseUrl}}"]}
+			}
+		},
+		{
+			"name": "🧠 Quick AI Query Test",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Primeiro precisa ter uma conexão criada",
+							"if (!pm.collectionVariables.get('connection_id')) {",
+							"    console.log('⚠️ Você precisa criar uma conexão primeiro!');",
+							"}"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const response = pm.response.json();",
+							"if (response.data?.executeAIQuery?.status === 'SUCCESS') {",
+							"    console.log('✅ AI Query successful');",
+							"    console.log('🤖 Generated SQL:', response.data.executeAIQuery.generatedQuery);",
+							"    console.log('⏱️ Execution time:', response.data.executeAIQuery.executionTime + 'ms');",
+							"    console.log('📊 Results:', JSON.stringify(response.data.executeAIQuery.results, null, 2));",
+							"} else {",
+							"    console.log('❌ AI Query failed:', response.data?.executeAIQuery?.error);",
+							"}"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\":\"mutation ExecuteAIQuery($input:AIQueryInput!){executeAIQuery(input:$input){id naturalQuery generatedQuery results{data}executionTime status error}}\",\"variables\":{\"input\":{\"connectionId\":\"{{connection_id}}\",\"naturalQuery\":\"Quantos registros existem na primeira tabela?\"}}}"
+				},
+				"url": {"raw": "{{baseUrl}}", "host": ["{{baseUrl}}"]}
+			}
+		}
+	]
+}

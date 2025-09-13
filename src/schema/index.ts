@@ -1,5 +1,6 @@
 import { authTypeDefs } from './auth.schema';
 import { managementTypeDefs } from './management.schema';
+import { dataQueryTypeDefs } from './data-query.schema';
 
 export const baseTypeDefs = `#graphql
   type Query {
@@ -19,4 +20,5 @@ export const typeDefs = [
   baseTypeDefs,
   authTypeDefs,
   managementTypeDefs,
+  dataQueryTypeDefs,
 ];

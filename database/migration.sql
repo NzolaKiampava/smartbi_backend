@@ -270,6 +270,90 @@ CREATE POLICY dashboards_company_isolation ON dashboards
 CREATE POLICY reports_company_isolation ON reports
     FOR ALL USING (company_id = current_setting('app.current_company_id')::UUID);
 
+-- Create Data Connections table for AI Query System
+DO $$ BEGIN
+    CREATE TYPE connection_type AS ENUM (
+        'MYSQL',
+        'POSTGRESQL',
+        'API_REST',
+        'API_GRAPHQL'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
+    CREATE TYPE connection_status AS ENUM (
+        'ACTIVE',
+        'INACTIVE',
+        'ERROR'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Create data_connections table
+CREATE TABLE IF NOT EXISTS data_connections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    type connection_type NOT NULL,
+    status connection_status NOT NULL DEFAULT 'INACTIVE',
+    config JSONB NOT NULL, -- Stores connection configuration
+    is_default BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_tested_at TIMESTAMP WITH TIME ZONE,
+    
+    CONSTRAINT unique_company_connection_name UNIQUE (company_id, name),
+    CONSTRAINT one_default_per_company EXCLUDE (company_id WITH =) WHERE (is_default = true)
+);
+
+-- Create AI query history table
+DO $$ BEGIN
+    CREATE TYPE query_status AS ENUM (
+        'SUCCESS',
+        'ERROR',
+        'TIMEOUT'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS ai_query_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    connection_id UUID NOT NULL REFERENCES data_connections(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    natural_query TEXT NOT NULL,
+    generated_query TEXT NOT NULL,
+    results JSONB, -- Stores query results
+    execution_time REAL, -- in milliseconds
+    status query_status NOT NULL,
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_data_connections_company_id ON data_connections(company_id);
+CREATE INDEX IF NOT EXISTS idx_data_connections_status ON data_connections(status);
+CREATE INDEX IF NOT EXISTS idx_ai_query_history_company_id ON ai_query_history(company_id);
+CREATE INDEX IF NOT EXISTS idx_ai_query_history_connection_id ON ai_query_history(connection_id);
+CREATE INDEX IF NOT EXISTS idx_ai_query_history_user_id ON ai_query_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_query_history_created_at ON ai_query_history(created_at);
+
+-- Add RLS policies for data_connections
+ALTER TABLE data_connections ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY data_connections_company_isolation ON data_connections
+    FOR ALL USING (company_id = current_setting('app.current_company_id')::UUID);
+
+-- Add RLS policies for ai_query_history
+ALTER TABLE ai_query_history ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY ai_query_history_company_isolation ON ai_query_history
+    FOR ALL USING (company_id = current_setting('app.current_company_id')::UUID);
+
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, service_role;

@@ -1,0 +1,419 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "SmartBI - Data Connections Testing",
+		"description": "Collection para testar conexões com bancos de dados externos e consultas IA",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"exec": [
+					""
+				],
+				"type": "text/javascript"
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"exec": [
+					""
+				],
+				"type": "text/javascript"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000/graphql",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "your_jwt_token_here",
+			"type": "string"
+		},
+		{
+			"key": "connection_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.login && response.data.login.token) {",
+									"        pm.collectionVariables.set('auth_token', response.data.login.token);",
+									"        console.log('Token saved:', response.data.login.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation Login($email: String!, $password: String!) { login(email: $email, password: $password) { token user { id email firstName lastName role companyId } } }\",\n  \"variables\": {\n    \"email\": \"admin@empresa.com\",\n    \"password\": \"sua_senha\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Data Connections",
+			"item": [
+				{
+					"name": "Create MySQL Connection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.data && response.data.createDataConnection) {",
+									"        pm.collectionVariables.set('connection_id', response.data.createDataConnection.id);",
+									"        console.log('Connection ID saved:', response.data.createDataConnection.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateDataConnection($input: DataConnectionInput!) { createDataConnection(input: $input) { id name type status config { host port database username hasPassword } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"MySQL Produção\",\n      \"type\": \"MYSQL\",\n      \"config\": {\n        \"host\": \"seu-servidor-mysql.com\",\n        \"port\": 3306,\n        \"database\": \"nome_do_banco\",\n        \"username\": \"usuario_mysql\",\n        \"password\": \"senha_mysql\",\n        \"timeout\": 30000\n      },\n      \"isDefault\": true\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create PostgreSQL Connection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateDataConnection($input: DataConnectionInput!) { createDataConnection(input: $input) { id name type status config { host port database username hasPassword } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"PostgreSQL Analytics\",\n      \"type\": \"POSTGRESQL\",\n      \"config\": {\n        \"host\": \"seu-servidor-postgres.com\",\n        \"port\": 5432,\n        \"database\": \"analytics_db\",\n        \"username\": \"postgres_user\",\n        \"password\": \"postgres_password\",\n        \"timeout\": 30000\n      },\n      \"isDefault\": false\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create API REST Connection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation CreateDataConnection($input: DataConnectionInput!) { createDataConnection(input: $input) { id name type status config { apiUrl hasApiKey headers { key value } } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"API Externa\",\n      \"type\": \"API_REST\",\n      \"config\": {\n        \"apiUrl\": \"https://api.exemplo.com\",\n        \"apiKey\": \"sua_api_key_aqui\",\n        \"headers\": [\n          {\n            \"key\": \"Content-Type\",\n            \"value\": \"application/json\"\n          },\n          {\n            \"key\": \"X-Custom-Header\",\n            \"value\": \"valor_customizado\"\n          }\n        ],\n        \"timeout\": 15000\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Test Connection",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query TestConnection($id: ID!) { testDataConnection(id: $id) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }\",\n  \"variables\": {\n    \"id\": \"{{connection_id}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Connections",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetDataConnections { getDataConnections { id name type status config { host port database username hasPassword apiUrl hasApiKey } isDefault createdAt updatedAt lastTestedAt } }\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Schema Info",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetSchemaInfo($connectionId: ID!) { getSchemaInfo(connectionId: $connectionId) { totalTables tables { name columns { name type nullable defaultValue } } } }\",\n  \"variables\": {\n    \"connectionId\": \"{{connection_id}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "AI Queries",
+			"item": [
+				{
+					"name": "Execute AI Query - Count Records",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Quantos registros existem na tabela de usuários?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Execute AI Query - Recent Orders",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Mostre os últimos 10 pedidos com valor total e status\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Execute AI Query - Sales by Month",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Vendas totais por mês nos últimos 6 meses\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get AI Query History",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetAIQueryHistory($limit: Int) { getAIQueryHistory(limit: $limit) { id naturalQuery generatedQuery executionTime status error createdAt } }\",\n  \"variables\": {\n    \"limit\": 20\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Test Different Database Types",
+			"item": [
+				{
+					"name": "Test MySQL External",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation TestConnection($input: DataConnectionInput!) { testConnection(input: $input) { success message latency schemaPreview { totalTables tables { name } } } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Test MySQL\",\n      \"type\": \"MYSQL\",\n      \"config\": {\n        \"host\": \"mysql-server.exemplo.com\",\n        \"port\": 3306,\n        \"database\": \"production_db\",\n        \"username\": \"readonly_user\",\n        \"password\": \"password123\"\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Test PostgreSQL External",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation TestConnection($input: DataConnectionInput!) { testConnection(input: $input) { success message latency schemaPreview { totalTables tables { name } } } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Test PostgreSQL\",\n      \"type\": \"POSTGRESQL\",\n      \"config\": {\n        \"host\": \"postgres.exemplo.com\",\n        \"port\": 5432,\n        \"database\": \"analytics\",\n        \"username\": \"analytics_user\",\n        \"password\": \"secure_password\"\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Test API REST External",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation TestConnection($input: DataConnectionInput!) { testConnection(input: $input) { success message latency } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Test API\",\n      \"type\": \"API_REST\",\n      \"config\": {\n        \"apiUrl\": \"https://jsonplaceholder.typicode.com\",\n        \"headers\": [\n          {\n            \"key\": \"Content-Type\",\n            \"value\": \"application/json\"\n          }\n        ]\n      }\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}",
+							"host": [
+								"{{baseUrl}}"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
