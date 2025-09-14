@@ -615,8 +615,15 @@ export class APIRestAdapter extends BaseAdapter {
       // For APIs, we interpret "query" as an endpoint path
       const sanitizedQuery = this.sanitizeQuery(query);
       
-      const url = `${config.host}${config.port ? ':' + config.port : ''}`;
+      // Use apiUrl if provided, otherwise fallback to host:port
+      const baseUrl = config.apiUrl || `${config.host}${config.port ? ':' + config.port : ''}`;
       const headers: any = { 'Content-Type': 'application/json' };
+      
+      // Add API key if provided
+      if (config.apiKey) {
+        headers['X-API-Key'] = config.apiKey;
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+      }
       
       // Add authentication headers if provided
       if (config.username && config.password) {
@@ -642,7 +649,7 @@ export class APIRestAdapter extends BaseAdapter {
       
       const response = await axios({
         method: method as any,
-        url: `${url}${endpoint}`,
+        url: `${baseUrl}${endpoint}`,
         headers,
         timeout: this.timeout
       });

@@ -1,0 +1,9 @@
+{
+  "query": "mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }",
+  "variables": {
+    "input": {
+      "connectionId": "a94006a4-9c9d-43bb-8bc9-9a04a02dbd80",
+      "naturalQuery": "mostra todos os usuários da API"
+    }
+  }
+}
