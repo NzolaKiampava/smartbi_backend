@@ -1,0 +1,16 @@
+{
+  "query": "mutation TestConnectionPublic($input: DataConnectionInput!) { testConnectionPublic(input: $input) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }",
+  "variables": {
+    "input": {
+      "name": "Test 2 - Specific Host",
+      "type": "POSTGRESQL",
+      "config": {
+        "host": "db.yazvflcxyqdughavhthm.supabase.co",
+        "port": 5432,
+        "database": "postgres",
+        "username": "postgres",
+        "password": "Nzola1011@"
+      }
+    }
+  }
+}

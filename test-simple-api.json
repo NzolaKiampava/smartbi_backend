@@ -1,0 +1,13 @@
+{
+  "query": "mutation CreateSimpleAPIConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { apiUrl } isDefault createdAt updatedAt lastTestedAt } }",
+  "variables": {
+    "input": {
+      "name": "HTTP Bin Test API",
+      "type": "API_REST",
+      "config": {
+        "apiUrl": "https://httpbin.org"
+      },
+      "isDefault": false
+    }
+  }
+}

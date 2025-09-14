@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "SmartBI - Database Tests (REAL)",
+    "description": "Testes para salvar e consultar dados REAIS no banco de dados SmartBI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. CREATE - Salvar Conexão Supabase no Banco",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreateSupabaseConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { host } isDefault createdAt updatedAt lastTestedAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Conexão Supabase Produção\",\n      \"type\": \"SUPABASE\",\n      \"config\": {\n        \"host\": \"https://yazvflcxyqdughavhthm.supabase.co\",\n        \"password\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhenZmbGN4eXFkdWdoYXZodGhtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzU5NzQ2NywiZXhwIjoyMDczMTczNDY3fQ.pJuPlQn0uw16YgcUzRBel9ahktlgL1SwHpHXGO1pED4\"\n      },\n      \"isDefault\": true\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "2. CREATE - Conexão PostgreSQL Teste",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreatePostgreSQLConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { host port database username } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"PostgreSQL Local\",\n      \"type\": \"POSTGRESQL\",\n      \"config\": {\n        \"host\": \"localhost\",\n        \"port\": 5432,\n        \"database\": \"testdb\",\n        \"username\": \"postgres\",\n        \"password\": \"password\"\n      },\n      \"isDefault\": false\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "3. READ - Listar Todas as Conexões",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query GetAllConnections { getDataConnectionsPublic { id name type status config { host port database username apiUrl } isDefault createdAt updatedAt lastTestedAt } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "4. TEST - Testar Conexão Existente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation TestConnection { testConnectionPublic(input: { type: SUPABASE, host: \\\"https://yazvflcxyqdughavhthm.supabase.co\\\", password: \\\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhenZmbGN4eXFkdWdoYXZodGhtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzU5NzQ2NywiZXhwIjoyMDczMTczNDY3fQ.pJuPlQn0uw16YgcUzRBel9ahktlgL1SwHpHXGO1pED4\\\" }) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "5. CREATE - Conexão MySQL Teste",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreateMySQLConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { host port database username } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"MySQL Development\",\n      \"type\": \"MYSQL\",\n      \"config\": {\n        \"host\": \"localhost\",\n        \"port\": 3306,\n        \"database\": \"devdb\",\n        \"username\": \"root\",\n        \"password\": \"root123\"\n      },\n      \"isDefault\": false\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "6. CREATE - Conexão API REST",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreateAPIConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { apiUrl apiKey } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"API Externa\",\n      \"type\": \"API_REST\",\n      \"config\": {\n        \"apiUrl\": \"https://jsonplaceholder.typicode.com\",\n        \"apiKey\": \"test-api-key\"\n      },\n      \"isDefault\": false\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    }
+  ]
+}

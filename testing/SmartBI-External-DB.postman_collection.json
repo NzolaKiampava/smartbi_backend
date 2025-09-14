@@ -1,0 +1,383 @@
+{
+  "info": {
+    "name": "SmartBI - External Database Testing",
+    "description": "Coleção para testar SmartBI com bancos de dados externos (Supabase, PostgreSQL, etc.)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000/graphql",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "Token de acesso (execute SmartBI-Auth primeiro)"
+    },
+    {
+      "key": "external_db_host",
+      "value": "aws-0-us-west-1.pooler.supabase.com",
+      "type": "string",
+      "description": "Host correto do pooler Supabase"
+    },
+    {
+      "key": "external_db_port",
+      "value": "5432",
+      "type": "string"
+    },
+    {
+      "key": "external_db_database",
+      "value": "postgres",
+      "type": "string"
+    },
+    {
+      "key": "external_db_username",
+      "value": "postgres.yazvflcxyqdughavhthm",
+      "type": "string",
+      "description": "Usuário com Project ID do Supabase"
+    },
+    {
+      "key": "external_db_password",
+      "value": "INSIRA_SUA_SENHA_AQUI",
+      "type": "string",
+      "description": "Senha do banco definida no projeto Supabase"
+    },
+    {
+      "key": "connection_id",
+      "value": "",
+      "type": "string",
+      "description": "ID da conexão criada (preenche automaticamente)"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Descobrir Schema do Cliente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation TestConnection($input: DataConnectionInput!) { testConnection(input: $input) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Banco do Cliente\",\n      \"type\": \"POSTGRESQL\",\n      \"config\": {\n        \"host\": \"{{external_db_host}}\",\n        \"port\": {{external_db_port}},\n        \"database\": \"{{external_db_database}}\",\n        \"username\": \"{{external_db_username}}\",\n        \"password\": \"{{external_db_password}}\"\n      }\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Descobre a estrutura do banco de dados externo do cliente"
+      }
+    },
+    {
+      "name": "02. Conectar com Banco Externo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreateDataConnection($input: DataConnectionInput!) { createDataConnection(input: $input) { id name type status config { host port database username hasPassword } isDefault createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Produção Cliente XYZ\",\n      \"type\": \"POSTGRESQL\",\n      \"config\": {\n        \"host\": \"{{external_db_host}}\",\n        \"port\": {{external_db_port}},\n        \"database\": \"{{external_db_database}}\",\n        \"username\": \"{{external_db_username}}\",\n        \"password\": \"{{external_db_password}}\"\n      },\n      \"isDefault\": true\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Cria uma conexão permanente com o banco externo do cliente"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Extrai o ID da conexão criada e salva nas variáveis",
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    if (response.data && response.data.createDataConnection) {",
+              "        const connectionId = response.data.createDataConnection.id;",
+              "        pm.collectionVariables.set('connection_id', connectionId);",
+              "        console.log('Connection ID salvo:', connectionId);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Listar Conexões",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query GetDataConnections { getDataConnections { id name type status config { host port database username hasPassword } isDefault createdAt } }\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Lista todas as conexões de dados criadas"
+      }
+    },
+    {
+      "name": "04. IA - Explorar Dados do Cliente",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Quantos registros existem em cada tabela principal?\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Primeira exploração: descobrir quantos dados existem"
+      }
+    },
+    {
+      "name": "05. IA - Amostra de Dados",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Mostre uma amostra dos dados mais recentes de cada tabela\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Ver exemplos de dados para entender a estrutura"
+      }
+    },
+    {
+      "name": "05. IA - Vendas por Usuário",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Mostre o total de vendas por usuário, incluindo o nome do usuário\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Consulta com JOIN: vendas agrupadas por usuário"
+      }
+    },
+    {
+      "name": "06. IA - Produtos Mais Vendidos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Quais são os 3 produtos mais vendidos? Mostre nome do produto e quantidade total vendida\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Consulta com ORDER BY e LIMIT: top 3 produtos"
+      }
+    },
+    {
+      "name": "07. IA - Receita por Categoria",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Qual é a receita total por categoria de produto?\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Consulta com GROUP BY: receita agregada por categoria"
+      }
+    },
+    {
+      "name": "08. IA - Usuários Sem Vendas",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Quais usuários ainda não fizeram nenhuma compra?\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Consulta com LEFT JOIN: usuários sem vendas"
+      }
+    },
+    {
+      "name": "09. IA - Análise Temporal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Mostre as vendas dos últimos 7 dias, agrupadas por dia\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Consulta temporal: vendas por data"
+      }
+    },
+    {
+      "name": "10. IA - Consulta Complexa",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation ExecuteAIQuery($input: AIQueryInput!) { executeAIQuery(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"{{connection_id}}\",\n      \"naturalQuery\": \"Quais usuários compraram produtos acima de R$ 1000? Mostre o nome do usuário, produto comprado e valor pago\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Consulta com filtros complexos e múltiplas condições"
+      }
+    },
+    {
+      "name": "11. Histórico de Consultas",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query GetQueryHistory($connectionId: ID!) { getQueryHistory(connectionId: $connectionId) { id naturalQuery generatedQuery executionTime status createdAt } }\",\n  \"variables\": {\n    \"connectionId\": \"{{connection_id}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Lista o histórico de consultas executadas"
+      }
+    },
+    {
+      "name": "12. Deletar Conexão",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation DeleteDataConnection($id: ID!) { deleteDataConnection(id: $id) { success message } }\",\n  \"variables\": {\n    \"id\": \"{{connection_id}}\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Remove a conexão criada (use apenas quando necessário)"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Verificações antes de cada request",
+          "if (!pm.collectionVariables.get('connection_id') && pm.info.requestName.includes('IA -')) {",
+          "    console.log('⚠️ ATENÇÃO: Execute primeiro \"02. Criar Conexão Permanente\" para obter o connection_id');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log básico para debug",
+          "console.log('Status:', pm.response.code);",
+          "if (pm.response.code !== 200) {",
+          "    console.log('Resposta:', pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ]
+}

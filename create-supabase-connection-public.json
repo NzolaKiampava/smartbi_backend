@@ -1,0 +1,14 @@
+{
+  "query": "mutation CreateSupabaseConnectionPublic($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { host } isDefault createdAt updatedAt } }",
+  "variables": {
+    "input": {
+      "name": "Minha Conexão Supabase",
+      "type": "SUPABASE",
+      "config": {
+        "host": "https://yazvflcxyqdughavhthm.supabase.co",
+        "password": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhenZmbGN4eXFkdWdoYXZodGhtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzU5NzQ2NywiZXhwIjoyMDczMTczNDY3fQ.pJuPlQn0uw16YgcUzRBel9ahktlgL1SwHpHXGO1pED4"
+      },
+      "isDefault": true
+    }
+  }
+}

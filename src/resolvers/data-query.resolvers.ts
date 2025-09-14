@@ -5,9 +5,12 @@ import {
   DataConnection, 
   AIQueryResult, 
   ConnectionTestResult, 
+  ConnectionTestInput,
+  ConnectionStatus,
   SchemaInfo 
 } from '../types/data-query';
 import { DataQueryService } from '../services/data-query.service';
+import { createDatabaseAdapter } from '../services/database-adapters.service';
 
 interface AuthenticatedContext extends GraphQLContext {
   user: NonNullable<GraphQLContext['user']>;
@@ -76,6 +79,57 @@ export const dataQueryResolvers = {
       const service = new DataQueryService(context.req.app.locals.supabase, getGeminiConfig());
       
       return await service.getAIQuery(user.companyId, id);
+    },
+
+    // Get connections without authentication (development only)
+    getDataConnectionsPublic: async (
+      _: any, 
+      __: any, 
+      context: GraphQLContext
+    ): Promise<DataConnection[]> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        // Get all connections from Demo Company
+        const { data: companies, error: companyError } = await context.req.app.locals.supabase
+          .from('companies')
+          .select('id')
+          .eq('slug', 'demo')
+          .single();
+
+        if (companyError || !companies) {
+          throw new Error('Demo company not found');
+        }
+
+        const { data: connections, error: connectionsError } = await context.req.app.locals.supabase
+          .from('data_connections')
+          .select('*')
+          .eq('company_id', companies.id)
+          .order('created_at', { ascending: false });
+
+        if (connectionsError) {
+          throw new Error(`Failed to fetch connections: ${connectionsError.message}`);
+        }
+
+        // Convert database format to GraphQL format
+        return (connections || []).map((conn: any) => ({
+          id: conn.id,
+          companyId: conn.company_id,
+          name: conn.name,
+          type: conn.type,
+          status: conn.status,
+          config: conn.config,
+          isDefault: conn.is_default,
+          createdAt: conn.created_at,
+          updatedAt: conn.updated_at,
+          lastTestedAt: conn.last_tested_at
+        }));
+      } catch (error) {
+        throw new Error(`Failed to get connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   },
 
@@ -144,6 +198,140 @@ export const dataQueryResolvers = {
       return await service.testConnection(input);
     },
 
+    // Temporary resolver for testing without authentication (development only)
+    testConnectionPublic: async (
+      _: any, 
+      { input }: { input: ConnectionTestInput }
+    ): Promise<ConnectionTestResult> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        const adapter = createDatabaseAdapter(input.type);
+        
+        // Convert ConnectionTestInput to DataConnectionConfig format
+        const config = {
+          host: input.host,
+          port: input.port,
+          database: input.database,
+          username: input.username,
+          password: input.password,
+          apiUrl: input.apiUrl,
+          apiKey: input.apiKey
+        };
+        
+        const result = await adapter.testConnection(config);
+        
+        // Get schema preview if connection is successful
+        let schemaPreview = null;
+        if (result.success) {
+          try {
+            const schemaInfo = await adapter.getSchemaInfo(config);
+            schemaPreview = {
+              totalTables: schemaInfo.totalTables,
+              tables: schemaInfo.tables.slice(0, 5) // Limit to 5 tables for preview
+            };
+          } catch (error) {
+            console.warn('Could not get schema preview:', error);
+          }
+        }
+
+        return {
+          ...result,
+          schemaPreview: schemaPreview || undefined
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          latency: undefined,
+          schemaPreview: undefined
+        };
+      }
+    },
+
+    // Create connection without authentication (development only)
+    createDataConnectionPublic: async (
+      _: any,
+      { input }: { input: DataConnectionInput },
+      context: GraphQLContext
+    ): Promise<DataConnection> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        // Get Demo Company ID from database
+        const { data: companies, error: companyError } = await context.req.app.locals.supabase
+          .from('companies')
+          .select('id')
+          .eq('slug', 'demo')
+          .single();
+
+        if (companyError || !companies) {
+          throw new Error('Demo company not found. Please run database migration first.');
+        }
+
+        // Test connection before saving (skip for development testing)
+        const adapter = createDatabaseAdapter(input.type);
+        let testResult;
+        
+        try {
+          testResult = await adapter.testConnection(input.config);
+        } catch (error) {
+          // In development, allow saving even if test fails
+          console.warn('Connection test failed but allowing save in development:', error);
+          testResult = { success: true, message: 'Development mode - test skipped' };
+        }
+        
+        if (!testResult.success) {
+          console.warn('Connection test failed but continuing in development mode:', testResult.message);
+          // In development, proceed anyway
+          testResult = { success: true, message: 'Development mode - proceeding despite test failure' };
+        }
+
+        // Save to database
+        const connectionData = {
+          company_id: companies.id,
+          name: input.name,
+          type: input.type,
+          status: ConnectionStatus.ACTIVE,
+          config: input.config,
+          is_default: input.isDefault || false,
+          last_tested_at: new Date().toISOString()
+        };
+
+        const { data: savedConnection, error: saveError } = await context.req.app.locals.supabase
+          .from('data_connections')
+          .insert(connectionData)
+          .select()
+          .single();
+
+        if (saveError) {
+          throw new Error(`Failed to save connection: ${saveError.message}`);
+        }
+
+        // Convert database format to GraphQL format
+        return {
+          id: savedConnection.id,
+          companyId: savedConnection.company_id,
+          name: savedConnection.name,
+          type: savedConnection.type,
+          status: savedConnection.status,
+          config: savedConnection.config,
+          isDefault: savedConnection.is_default,
+          createdAt: savedConnection.created_at,
+          updatedAt: savedConnection.updated_at,
+          lastTestedAt: savedConnection.last_tested_at
+        };
+      } catch (error) {
+        throw new Error(`Failed to create connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
+
     executeAIQuery: async (
       _: any, 
       { input }: { input: AIQueryInput }, 
@@ -154,6 +342,36 @@ export const dataQueryResolvers = {
       // All authenticated users can execute AI queries
       const service = new DataQueryService(context.req.app.locals.supabase, getGeminiConfig());
       return await service.executeAIQuery(user.companyId, user.id, input);
+    },
+
+    // Execute AI query without authentication (development only)
+    executeAIQueryPublic: async (
+      _: any, 
+      { input }: { input: AIQueryInput }, 
+      context: GraphQLContext
+    ): Promise<AIQueryResult> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        // Get Demo Company
+        const { data: companies, error: companyError } = await context.req.app.locals.supabase
+          .from('companies')
+          .select('id')
+          .eq('slug', 'demo')
+          .single();
+
+        if (companyError || !companies) {
+          throw new Error('Demo company not found. Please run database migration first.');
+        }
+
+        const service = new DataQueryService(context.req.app.locals.supabase, getGeminiConfig());
+        return await service.executeAIQuery(companies.id, 'demo-user', input);
+      } catch (error) {
+        throw new Error(`Failed to execute AI query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   },
 

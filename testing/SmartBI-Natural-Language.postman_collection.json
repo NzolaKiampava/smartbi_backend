@@ -1,0 +1,344 @@
+{
+	"info": {
+		"_postman_id": "natural-language-queries",
+		"name": "SmartBI - Natural Language Queries",
+		"description": "Coleção para testar consultas em linguagem natural no SmartBI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Setup",
+			"item": [
+				{
+					"name": "Listar Conexões Disponíveis",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"query GetConnections { getDataConnectionsPublic { id name type status isDefault createdAt } }\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Consultas Básicas",
+			"item": [
+				{
+					"name": "Mostrar Primeiros Usuários",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Mostre os 5 primeiros usuários\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Contar Total de Usuários",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Quantos usuários temos no total?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Listar Empresas",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Mostre todas as empresas cadastradas\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Consultas Filtradas",
+			"item": [
+				{
+					"name": "Usuários por Empresa",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Mostre usuários da empresa Demo\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Conexões por Tipo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Quais são as conexões do tipo SUPABASE?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Usuários Ativos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Mostre apenas usuários com status ativo\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Consultas Avançadas",
+			"item": [
+				{
+					"name": "Estatísticas de Empresas",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Quantas empresas ativas existem?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Dados Recentes",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Mostre os usuários criados nos últimos 7 dias\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Histórico de Consultas AI",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Mostre o histórico das últimas consultas de IA\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Testes de Português Brasileiro",
+			"item": [
+				{
+					"name": "Quantas empresas temos?",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Quantas empresas temos?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Quem são os administradores?",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Quem são os usuários administradores?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				},
+				{
+					"name": "Qual é o nome da empresa padrão?",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"3343fdeb-1ced-42aa-8f40-a9821c8a6957\",\n      \"naturalQuery\": \"Qual é o nome da empresa padrão?\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "http://localhost:4000/graphql",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "4000",
+							"path": ["graphql"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:4000"
+		},
+		{
+			"key": "connection_id",
+			"value": "3343fdeb-1ced-42aa-8f40-a9821c8a6957"
+		}
+	]
+}

@@ -1,0 +1,14 @@
+{
+  "query": "mutation CreateAPIConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { apiUrl apiKey } isDefault createdAt updatedAt lastTestedAt } }",
+  "variables": {
+    "input": {
+      "name": "API JSONPlaceholder Test",
+      "type": "API_REST",
+      "config": {
+        "apiUrl": "https://jsonplaceholder.typicode.com",
+        "apiKey": "test-key-123"
+      },
+      "isDefault": false
+    }
+  }
+}

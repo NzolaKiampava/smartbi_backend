@@ -1,0 +1,3 @@
+{
+  "query": "mutation { login(input: { email: \"test@smartbi.com\", password: \"Test123456!\" }) { user { id name email companyId } tokens { accessToken refreshToken } } }"
+}

@@ -1,0 +1,3 @@
+{
+  "query": "query GetConnections { getDataConnectionsPublic { id name type status isDefault createdAt } }"
+}

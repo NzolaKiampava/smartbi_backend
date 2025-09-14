@@ -180,6 +180,7 @@ export class PostgreSQLAdapter extends BaseAdapter {
       user: config.username,
       password: config.password,
       database: config.database,
+      ssl: config.host?.includes('supabase.co') ? { rejectUnauthorized: false } : false,
       connectionTimeoutMillis: this.timeout,
       query_timeout: this.timeout
     });
@@ -294,16 +295,183 @@ export class PostgreSQLAdapter extends BaseAdapter {
     }
   }
 }
-// API REST Adapter with Real Implementation
+// Supabase API Adapter (uses REST API instead of direct PostgreSQL)
+export class SupabaseAdapter extends BaseAdapter {
+  async testConnection(config: DataConnectionConfig): Promise<{ success: boolean; message: string; latency?: number }> {
+    const startTime = Date.now();
+    
+    try {
+      // For Supabase, we expect the config to have:
+      // host: Supabase URL (https://project.supabase.co)
+      // password: Service Role Key or Anon Key
+      
+      const supabaseUrl = config.host;
+      const apiKey = config.password; // Using password field for API key
+      
+      const response = await axios.get(`${supabaseUrl}/rest/v1/`, {
+        headers: {
+          'apikey': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.timeout
+      });
+      
+      const latency = Date.now() - startTime;
+      
+      return {
+        success: true,
+        message: `Supabase API connection successful (Status: ${response.status})`,
+        latency
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return {
+          success: false,
+          message: `Supabase API connection failed: ${error.response?.status} ${error.response?.statusText || error.message}`
+        };
+      }
+      
+      return {
+        success: false,
+        message: `Supabase API connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  async getSchemaInfo(config: DataConnectionConfig): Promise<SchemaInfo> {
+    try {
+      const supabaseUrl = config.host;
+      const apiKey = config.password;
+      
+      // Get all tables from Supabase REST API
+      const response = await axios.get(`${supabaseUrl}/rest/v1/`, {
+        headers: {
+          'apikey': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.timeout
+      });
+      
+      // Parse OpenAPI schema to extract table information
+      const tables: TableInfo[] = [];
+      
+      if (response.data && response.data.paths) {
+        Object.keys(response.data.paths).forEach(path => {
+          if (path.startsWith('/') && !path.includes('{')) {
+            const tableName = path.substring(1); // Remove leading slash
+            
+            // Basic column info (Supabase doesn't expose full schema via REST)
+            tables.push({
+              name: tableName,
+              columns: [
+                { name: 'id', type: 'uuid', nullable: false },
+                { name: 'created_at', type: 'timestamp', nullable: true },
+                { name: 'updated_at', type: 'timestamp', nullable: true }
+              ]
+            });
+          }
+        });
+      }
+      
+      // If no tables found from schema, try to get some basic info
+      if (tables.length === 0) {
+        tables.push({
+          name: 'supabase_api',
+          columns: [
+            { name: 'endpoint', type: 'string', nullable: false },
+            { name: 'data', type: 'json', nullable: true }
+          ]
+        });
+      }
+
+      return {
+        tables,
+        totalTables: tables.length
+      };
+    } catch (error) {
+      throw new Error(`Failed to get Supabase schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async executeQuery(config: DataConnectionConfig, query: string): Promise<any[]> {
+    try {
+      const sanitizedQuery = this.sanitizeQuery(query);
+      const supabaseUrl = config.host;
+      const apiKey = config.password;
+      
+      // For SQL queries in Supabase, we need to use RPC or convert to PostgREST
+      // For now, let's try to extract table name from SELECT queries and use PostgREST
+      
+      const selectMatch = sanitizedQuery.match(/SELECT\s+[\s\S]*?\s+FROM\s+(\w+)/i);
+      if (selectMatch) {
+        const tableName = selectMatch[1];
+        let endpoint = `/${tableName}`;
+        
+        // Add basic LIMIT support
+        const limitMatch = sanitizedQuery.match(/LIMIT\s+(\d+)/i);
+        if (limitMatch) {
+          endpoint += `?limit=${limitMatch[1]}`;
+        }
+        
+        const response = await axios.get(`${supabaseUrl}/rest/v1${endpoint}`, {
+          headers: {
+            'apikey': apiKey,
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: this.timeout
+        });
+        
+        return Array.isArray(response.data) ? response.data : [response.data];
+      }
+      
+      // For COUNT queries, try to use PostgREST head request
+      const countMatch = sanitizedQuery.match(/SELECT\s+COUNT\(\*\)\s+FROM\s+(\w+)/i);
+      if (countMatch) {
+        const tableName = countMatch[1];
+        
+        const response = await axios.head(`${supabaseUrl}/rest/v1/${tableName}`, {
+          headers: {
+            'apikey': apiKey,
+            'Authorization': `Bearer ${apiKey}`,
+            'Prefer': 'count=exact'
+          },
+          timeout: this.timeout
+        });
+        
+        const count = response.headers['content-range']?.split('/')[1] || '0';
+        return [{ count: parseInt(count) }];
+      }
+      
+      throw new Error('Complex SQL queries not supported for Supabase REST API. Use simple SELECT or COUNT queries.');
+      
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Supabase query failed: ${error.response?.status} ${error.response?.statusText || error.message}`);
+      }
+      
+      throw new Error(`Supabase query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+}
 export class APIRestAdapter extends BaseAdapter {
   async testConnection(config: DataConnectionConfig): Promise<{ success: boolean; message: string; latency?: number }> {
     const startTime = Date.now();
     
     try {
-      const url = `${config.host}${config.port ? ':' + config.port : ''}`;
+      // Use apiUrl if provided, otherwise fallback to host:port
+      const url = config.apiUrl || `${config.host}${config.port ? ':' + config.port : ''}`;
       const headers: any = {};
       
-      // Add authentication headers if provided
+      // Add API key if provided
+      if (config.apiKey) {
+        headers['X-API-Key'] = config.apiKey;
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+      }
+      
+      // Add basic auth if provided
       if (config.username && config.password) {
         const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
         headers.Authorization = `Basic ${auth}`;
@@ -339,10 +507,17 @@ export class APIRestAdapter extends BaseAdapter {
 
   async getSchemaInfo(config: DataConnectionConfig): Promise<SchemaInfo> {
     try {
-      const url = `${config.host}${config.port ? ':' + config.port : ''}`;
+      // Use apiUrl if provided, otherwise fallback to host:port
+      const url = config.apiUrl || `${config.host}${config.port ? ':' + config.port : ''}`;
       const headers: any = {};
       
-      // Add authentication headers if provided
+      // Add API key if provided
+      if (config.apiKey) {
+        headers['X-API-Key'] = config.apiKey;
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+      }
+      
+      // Add basic auth if provided
       if (config.username && config.password) {
         const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
         headers.Authorization = `Basic ${auth}`;
@@ -508,6 +683,8 @@ export function createDatabaseAdapter(type: ConnectionType): DatabaseAdapter {
       return new MySQLAdapter();
     case ConnectionType.POSTGRESQL:
       return new PostgreSQLAdapter();
+    case ConnectionType.SUPABASE:
+      return new SupabaseAdapter();
     case ConnectionType.API_REST:
       return new APIRestAdapter();
     default:
@@ -518,6 +695,7 @@ export function createDatabaseAdapter(type: ConnectionType): DatabaseAdapter {
 export default {
   MySQLAdapter,
   PostgreSQLAdapter,
+  SupabaseAdapter,
   APIRestAdapter,
   createDatabaseAdapter
 };

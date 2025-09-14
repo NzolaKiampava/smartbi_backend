@@ -1,6 +1,7 @@
 export enum ConnectionType {
   MYSQL = 'MYSQL',
   POSTGRESQL = 'POSTGRESQL',
+  SUPABASE = 'SUPABASE',
   API_REST = 'API_REST',
   API_GRAPHQL = 'API_GRAPHQL'
 }
@@ -86,6 +87,17 @@ export interface ConnectionTestResult {
   message: string;
   latency?: number;
   schemaPreview?: SchemaInfo;
+}
+
+export interface ConnectionTestInput {
+  type: ConnectionType;
+  host?: string;
+  port?: number;
+  database?: string;
+  username?: string;
+  password?: string;
+  apiUrl?: string;
+  apiKey?: string;
 }
 
 // Input types

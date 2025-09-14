@@ -1,0 +1,3 @@
+{
+  "query": "mutation { register(input: { name: \"Test User\", email: \"test@smartbi.com\", password: \"Test123456!\", companyName: \"Test Company\" }) { user { id name email } company { id name } tokens { accessToken refreshToken } } }"
+}

@@ -318,6 +318,7 @@ Respond with ONLY the JSON object:
       case ConnectionType.MYSQL:
         return 'MySQL';
       case ConnectionType.POSTGRESQL:
+      case ConnectionType.SUPABASE:
         return 'PostgreSQL';
       default:
         return 'SQL';

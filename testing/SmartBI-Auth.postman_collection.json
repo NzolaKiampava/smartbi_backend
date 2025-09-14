@@ -1,0 +1,166 @@
+{
+  "info": {
+    "name": "SmartBI - Authentication Setup",
+    "description": "Coleção para fazer login antes de testar conexões de banco",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000/graphql",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string",
+      "description": "Token de acesso obtido após login"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Registrar Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation Register($input: RegisterInput!) { register(input: $input) { success message data { user { id email name role } accessToken refreshToken } } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"Admin Teste\",\n      \"email\": \"admin@smartbi.com\",\n      \"password\": \"smartbi123\",\n      \"role\": \"SUPER_ADMIN\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Registra um usuário administrador para testes"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Extrai o token de acesso se o registro for bem-sucedido",
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    if (response.data && response.data.register && response.data.register.success) {",
+              "        const accessToken = response.data.register.data.accessToken;",
+              "        pm.collectionVariables.set('access_token', accessToken);",
+              "        console.log('Access token salvo:', accessToken.substring(0, 20) + '...');",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Login Admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation Login($input: LoginInput!) { login(input: $input) { success message data { user { id email name role } accessToken refreshToken } } }\",\n  \"variables\": {\n    \"input\": {\n      \"email\": \"admin@smartbi.com\",\n      \"password\": \"smartbi123\"\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Faz login com o usuário admin criado"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Extrai o token de acesso após login",
+              "if (pm.response.code === 200) {",
+              "    const response = pm.response.json();",
+              "    if (response.data && response.data.login && response.data.login.success) {",
+              "        const accessToken = response.data.login.data.accessToken;",
+              "        pm.collectionVariables.set('access_token', accessToken);",
+              "        console.log('Login realizado! Token salvo:', accessToken.substring(0, 20) + '...');",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Verificar Perfil",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query Me { me { user { id email name role } company { id name } } }\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Verifica se o login funcionou e mostra dados do usuário"
+      }
+    },
+    {
+      "name": "04. Testar Conexão Supabase (Autenticado)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation TestConnection($input: DataConnectionInput!) { testConnection(input: $input) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }\",\n  \"variables\": {\n    \"input\": {\n      \"name\": \"SmartQuote Supabase\",\n      \"type\": \"POSTGRESQL\",\n      \"config\": {\n        \"host\": \"db.hpkbzabbwghxlsoyvomq.supabase.co\",\n        \"port\": 5432,\n        \"database\": \"postgres\",\n        \"username\": \"postgres\",\n        \"password\": \"42smartquote\"\n      }\n    }\n  }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}",
+          "host": ["{{base_url}}"]
+        },
+        "description": "Agora testa a conexão com o Supabase usando autenticação"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Verifica se precisa de token para requests autenticados",
+          "if (pm.info.requestName.includes('Autenticado') && !pm.collectionVariables.get('access_token')) {",
+          "    console.log('⚠️ ATENÇÃO: Execute primeiro o registro e login para obter o token de acesso');",
+          "}"
+        ]
+      }
+    }
+  ]
+}

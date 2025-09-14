@@ -1,0 +1,16 @@
+{
+  "query": "mutation TestConnectionPublic($input: DataConnectionInput!) { testConnectionPublic(input: $input) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }",
+  "variables": {
+    "input": {
+      "name": "SmartBI Supabase Test",
+      "type": "POSTGRESQL",
+      "config": {
+        "host": "aws-0-us-west-1.pooler.supabase.com",
+        "port": 5432,
+        "database": "postgres",
+        "username": "postgres.yazvflcxyqdughavhthm",
+        "password": "Nzola1011@"
+      }
+    }
+  }
+}

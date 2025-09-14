@@ -1,0 +1,17 @@
+{
+  "query": "mutation CreatePostgreSQLConnection($input: DataConnectionInput!) { createDataConnectionPublic(input: $input) { id name type status config { host port database username } isDefault createdAt updatedAt lastTestedAt } }",
+  "variables": {
+    "input": {
+      "name": "PostgreSQL Supabase Connection",
+      "type": "POSTGRESQL",
+      "config": {
+        "host": "db.yazvflcxyqdughavhthm.supabase.co",
+        "port": 5432,
+        "database": "postgres",
+        "username": "postgres.yazvflcxyqdughavhthm",
+        "password": "Nzola1011@"
+      },
+      "isDefault": true
+    }
+  }
+}

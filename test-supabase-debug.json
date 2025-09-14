@@ -1,0 +1,3 @@
+{
+  "query": "mutation { testConnectionPublic(input: { name: \"Test Supabase Debug\", type: SUPABASE, config: { host: \"https://yazvflcxyqdughavhthm.supabase.co\", password: \"Nzola1011@\" } }) { success message latency } }"
+}

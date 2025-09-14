@@ -275,6 +275,7 @@ DO $$ BEGIN
     CREATE TYPE connection_type AS ENUM (
         'MYSQL',
         'POSTGRESQL',
+        'SUPABASE',
         'API_REST',
         'API_GRAPHQL'
     );

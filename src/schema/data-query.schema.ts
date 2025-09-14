@@ -2,6 +2,7 @@ export const dataQueryTypeDefs = `#graphql
   enum ConnectionType {
     MYSQL
     POSTGRESQL
+    SUPABASE
     API_REST
     API_GRAPHQL
   }
@@ -66,6 +67,17 @@ export const dataQueryTypeDefs = `#graphql
     value: String!
   }
 
+  input ConnectionTestInput {
+    type: ConnectionType!
+    host: String
+    port: Int
+    database: String
+    username: String
+    password: String
+    apiUrl: String
+    apiKey: String
+  }
+
   type AIQueryResult {
     id: ID!
     companyId: ID!
@@ -116,6 +128,9 @@ export const dataQueryTypeDefs = `#graphql
     getDataConnections: [DataConnection!]!
     getDataConnection(id: ID!): DataConnection
     testDataConnection(id: ID!): ConnectionTestResult!
+    
+    # Get connections without authentication (development only)
+    getDataConnectionsPublic: [DataConnection!]!
     getSchemaInfo(connectionId: ID!): SchemaInfo!
     
     # AI Queries
@@ -130,8 +145,17 @@ export const dataQueryTypeDefs = `#graphql
     deleteDataConnection(id: ID!): Boolean!
     testConnection(input: DataConnectionInput!): ConnectionTestResult!
     
+    # Testing without authentication (development only)
+    testConnectionPublic(input: ConnectionTestInput!): ConnectionTestResult!
+    
+    # Create connection without authentication (development only)
+    createDataConnectionPublic(input: DataConnectionInput!): DataConnection!
+    
     # AI Query Execution
     executeAIQuery(input: AIQueryInput!): AIQueryResult!
+    
+    # Execute AI query without authentication (development only)
+    executeAIQueryPublic(input: AIQueryInput!): AIQueryResult!
   }
 
   type ConnectionTestResult {

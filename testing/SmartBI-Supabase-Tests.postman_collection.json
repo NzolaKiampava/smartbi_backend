@@ -1,0 +1,101 @@
+{
+  "info": {
+    "name": "SmartBI - Supabase Connection Tests",
+    "description": "Testes de conexão e consultas SmartBI com Supabase",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Test Supabase Connection (Basic)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation { testConnectionPublic(input: { type: SUPABASE, host: \\\"https://yazvflcxyqdughavhthm.supabase.co\\\", password: \\\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhenZmbGN4eXFkdWdoYXZodGhtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzU5NzQ2NywiZXhwIjoyMDczMTczNDY3fQ.pJuPlQn0uw16YgcUzRBel9ahktlgL1SwHpHXGO1pED4\\\" }) { success message latency } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "2. Test Supabase + Schema Discovery",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation { testConnectionPublic(input: { type: SUPABASE, host: \\\"https://yazvflcxyqdughavhthm.supabase.co\\\", password: \\\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhenZmbGN4eXFkdWdoYXZodGhtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzU5NzQ2NywiZXhwIjoyMDczMTczNDY3fQ.pJuPlQn0uw16YgcUzRBel9ahktlgL1SwHpHXGO1pED4\\\" }) { success message latency schemaPreview { totalTables tables { name columns { name type nullable } } } } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "3. Test PostgreSQL Connection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation { testConnectionPublic(input: { type: POSTGRESQL, host: \\\"localhost\\\", port: 5432, database: \\\"testdb\\\", username: \\\"postgres\\\", password: \\\"password\\\" }) { success message latency } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "4. Test MySQL Connection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation { testConnectionPublic(input: { type: MYSQL, host: \\\"localhost\\\", port: 3306, database: \\\"testdb\\\", username: \\\"root\\\", password: \\\"password\\\" }) { success message latency } }\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:4000/graphql",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "4000",
+          "path": ["graphql"]
+        }
+      }
+    }
+  ]
+}

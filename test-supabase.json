@@ -1,0 +1,3 @@
+{
+  "query": "mutation { testConnectionPublic(input: { type: SUPABASE, host: \"https://yazvflcxyqdughavhthm.supabase.co\", password: \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhenZmbGN4eXFkdWdoYXZodGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc2NDAyNTMsImV4cCI6MjA1MzIxNjI1M30.Ay6aYdLJ1CQAx8x5_RjBhGzYwKGBiEqNhZxLdGCl0zY\" }) { success message latency } }"
+}
