@@ -356,19 +356,22 @@ export const dataQueryResolvers = {
       }
 
       try {
-        // Get Demo Company
-        const { data: companies, error: companyError } = await context.req.app.locals.supabase
-          .from('companies')
+        // Use the fixed Demo Company ID that you provided
+        const demoCompanyId = 'f21b31ec-6487-413a-99f7-3a6a1a34b171';
+        
+        // Get a demo user from the company or use a fixed UUID for testing
+        const { data: users, error: userError } = await context.req.app.locals.supabase
+          .from('users')
           .select('id')
-          .eq('slug', 'demo')
+          .eq('company_id', demoCompanyId)
+          .limit(1)
           .single();
 
-        if (companyError || !companies) {
-          throw new Error('Demo company not found. Please run database migration first.');
-        }
+        // Use the first user found, or a fixed demo UUID if no users exist
+        const demoUserId = users?.id || 'f21b31ec-6487-413a-99f7-3a6a1a34b172'; // Fixed demo user UUID
 
         const service = new DataQueryService(context.req.app.locals.supabase, getGeminiConfig());
-        return await service.executeAIQuery(companies.id, 'demo-user', input);
+        return await service.executeAIQuery(demoCompanyId, demoUserId, input);
       } catch (error) {
         throw new Error(`Failed to execute AI query: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }

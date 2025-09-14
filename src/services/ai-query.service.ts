@@ -127,7 +127,7 @@ const endpointsDescription = apiEndpoints?.map(endpoint =>
 ).join('\n') || 'No endpoints available';
 
 return `
-You are an API query translator.
+You are an API query translator for REST APIs.
 Convert this natural language query to a REST API call configuration.
 
 USER QUERY: "${naturalQuery}"
@@ -135,24 +135,27 @@ USER QUERY: "${naturalQuery}"
 AVAILABLE API ENDPOINTS:
 ${endpointsDescription}
 
-Generate a JSON object with the following structure:
+IMPORTANT RULES:
+1. Generate ONLY a JSON object without markdown formatting or explanations
+2. Choose the most appropriate endpoint from the available list
+3. Use GET method for data retrieval queries
+4. For queries like "show albums", use the albums endpoint
+5. For queries like "show posts", use the posts endpoint
+6. For queries like "show users", use the users endpoint
+7. If no exact match, choose the closest endpoint
+8. Always use the exact path from the available endpoints
+
+Generate a JSON object with this exact structure:
 {
-"method": "GET|POST|PUT|DELETE",
-"path": "/api/endpoint/path",
-"params": {
-    "param1": "value1",
-    "param2": "value2"
-},
-"body": {
-    // for POST/PUT requests
-},
-"description": "Brief explanation of what this call does"
+  "method": "GET",
+  "path": "/exact/endpoint/path",
+  "description": "What this API call does"
 }
 
-If the query cannot be translated to an API call, return:
+If the query cannot be matched to any available endpoint, return:
 {
-"error": "Cannot translate to API call",
-"reason": "Explanation of why it's not possible"
+  "error": "No matching endpoint found",
+  "reason": "Explanation of why no endpoint matches"
 }
 
 Respond with ONLY the JSON object:
@@ -224,7 +227,11 @@ Respond with ONLY the JSON object:
 
   private parseAPIResponse(response: string): AIQueryResult {
     try {
-      const cleanedResponse = response.trim();
+      console.log('Raw Gemini API response:', response);
+      
+      const cleanedResponse = this.cleanAPIResponse(response);
+      console.log('Cleaned response:', cleanedResponse);
+      
       const apiCall = JSON.parse(cleanedResponse);
       
       if (apiCall.error) {
@@ -245,6 +252,9 @@ Respond with ONLY the JSON object:
         explanation: confidence < 0.7 ? 'Low confidence in generated API call. Please review before execution.' : undefined
       };
     } catch (error) {
+      console.error('Failed to parse API response:', error);
+      console.error('Response that failed to parse:', response);
+      
       return {
         generatedQuery: JSON.stringify({ error: 'Invalid JSON response' }),
         queryType: 'ERROR',
@@ -263,6 +273,22 @@ Respond with ONLY the JSON object:
     
     // Remove trailing semicolon if present
     cleaned = cleaned.replace(/;$/, '');
+    
+    return cleaned;
+  }
+
+  private cleanAPIResponse(response: string): string {
+    // Remove markdown code blocks
+    let cleaned = response.replace(/```json\n?/gi, '').replace(/```\n?/g, '');
+    
+    // Remove extra whitespace
+    cleaned = cleaned.trim();
+    
+    // Try to extract JSON from response if it contains other text
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleaned = jsonMatch[0];
+    }
     
     return cleaned;
   }

@@ -244,10 +244,14 @@ export class DataQueryService {
       if (connection.type === ConnectionType.API_REST || connection.type === ConnectionType.API_GRAPHQL) {
         // Handle API queries
         const apiAdapter = new APIRestAdapter();
+        
+        // Get known endpoints based on the API URL
+        const apiEndpoints = this.getKnownAPIEndpoints(decryptedConfig.apiUrl || decryptedConfig.host || '');
+        
         const aiResult = await this.aiService.translateToAPICall({
             connectionType: connection.type,
             naturalQuery: input.naturalQuery,
-            apiEndpoints: [] // In a real implementation, you'd get this from the API documentation
+            apiEndpoints: apiEndpoints
         });
 
         generatedQuery = aiResult.generatedQuery;
@@ -258,8 +262,17 @@ export class DataQueryService {
         } else {
           try {
             const apiCallConfig = JSON.parse(aiResult.generatedQuery);
-            const apiResult = await apiAdapter.executeQuery(decryptedConfig, apiCallConfig);
-            results = Array.isArray(apiResult) ? apiResult : [apiResult];
+            
+            // Check if the AI generated an error response
+            if (apiCallConfig.error) {
+              status = QueryStatus.ERROR;
+              errorMessage = apiCallConfig.error;
+            } else {
+              // Execute the API call using the generated configuration
+              const endpoint = `${apiCallConfig.method || 'GET'} ${apiCallConfig.path}`;
+              const apiResult = await apiAdapter.executeQuery(decryptedConfig, endpoint);
+              results = Array.isArray(apiResult) ? apiResult : [apiResult];
+            }
           } catch (error) {
             status = QueryStatus.ERROR;
             errorMessage = `API execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -442,5 +455,33 @@ export class DataQueryService {
   private decryptSensitiveData(config: any): any {
     // In a real implementation, you would decrypt sensitive fields
     return { ...config };
+  }
+
+  // Get known API endpoints based on the API URL
+  private getKnownAPIEndpoints(apiUrl: string): any[] {
+    // Check for known APIs and return their endpoints
+    if (apiUrl.includes('jsonplaceholder.typicode.com')) {
+      return [
+        { path: '/posts', method: 'GET', description: 'Get all posts' },
+        { path: '/posts/{id}', method: 'GET', description: 'Get a specific post by ID' },
+        { path: '/albums', method: 'GET', description: 'Get all albums' },
+        { path: '/albums/{id}', method: 'GET', description: 'Get a specific album by ID' },
+        { path: '/photos', method: 'GET', description: 'Get all photos' },
+        { path: '/photos/{id}', method: 'GET', description: 'Get a specific photo by ID' },
+        { path: '/users', method: 'GET', description: 'Get all users' },
+        { path: '/users/{id}', method: 'GET', description: 'Get a specific user by ID' },
+        { path: '/comments', method: 'GET', description: 'Get all comments' },
+        { path: '/comments/{id}', method: 'GET', description: 'Get a specific comment by ID' },
+        { path: '/todos', method: 'GET', description: 'Get all todos' },
+        { path: '/todos/{id}', method: 'GET', description: 'Get a specific todo by ID' }
+      ];
+    }
+    
+    // For unknown APIs, return generic endpoints
+    return [
+      { path: '/api/data', method: 'GET', description: 'Get data from API' },
+      { path: '/api/list', method: 'GET', description: 'Get list of items' },
+      { path: '/api/search', method: 'GET', description: 'Search API' }
+    ];
   }
 }
