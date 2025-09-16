@@ -23,7 +23,7 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).default('100'),
   
   // CORS
-  ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
+  ALLOWED_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173,http://localhost:4000'),
 });
 
 const env = envSchema.safeParse(process.env);
