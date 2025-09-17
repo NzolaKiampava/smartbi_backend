@@ -130,6 +130,104 @@ export const dataQueryResolvers = {
       } catch (error) {
         throw new Error(`Failed to get connections: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+    },
+
+    // Get AI query history without authentication (development only)
+    getAIQueryHistoryPublic: async (
+      _: any,
+      { limit }: { limit?: number },
+      context: GraphQLContext
+    ): Promise<AIQueryResult[]> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        // Get Demo Company
+        const { data: companies, error: companyError } = await context.req.app.locals.supabase
+          .from('companies')
+          .select('id')
+          .eq('slug', 'demo')
+          .single();
+
+        if (companyError || !companies) {
+          throw new Error('Demo company not found. Please run database migration first.');
+        }
+
+        let query = context.req.app.locals.supabase
+          .from('ai_query_history')
+          .select('*')
+          .eq('company_id', companies.id)
+          .order('created_at', { ascending: false });
+
+        if (limit) {
+          query = query.limit(limit);
+        }
+
+        const { data: history, error: historyError } = await query;
+
+        if (historyError) {
+          throw new Error(`Failed to fetch query history: ${historyError.message}`);
+        }
+
+        return (history || []).map((query: any) => ({
+          id: query.id,
+          companyId: query.company_id,
+          connectionId: query.connection_id,
+          naturalQuery: query.natural_query,
+          generatedQuery: query.generated_query,
+          results: (query.results || []).map((result: any) => ({ data: result })),
+          executionTime: query.execution_time,
+          status: query.status,
+          error: query.error_message,
+          createdAt: query.created_at
+        }));
+      } catch (error) {
+        throw new Error(`Failed to get query history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
+
+    // Get specific AI query without authentication (development only)
+    getAIQueryPublic: async (
+      _: any,
+      { id }: { id: string },
+      context: GraphQLContext
+    ): Promise<AIQueryResult | null> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        const { data: query, error: queryError } = await context.req.app.locals.supabase
+          .from('ai_query_history')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (queryError) {
+          if (queryError.code === 'PGRST116') {
+            return null; // Not found
+          }
+          throw new Error(`Failed to fetch query: ${queryError.message}`);
+        }
+
+        return {
+          id: query.id,
+          companyId: query.company_id,
+          connectionId: query.connection_id,
+          naturalQuery: query.natural_query,
+          generatedQuery: query.generated_query,
+          results: (query.results || []).map((result: any) => ({ data: result })),
+          executionTime: query.execution_time,
+          status: query.status,
+          error: query.error_message,
+          createdAt: query.created_at
+        };
+      } catch (error) {
+        throw new Error(`Failed to get query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   },
 

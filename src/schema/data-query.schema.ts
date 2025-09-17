@@ -136,6 +136,10 @@ export const dataQueryTypeDefs = `#graphql
     # AI Queries
     getAIQueryHistory: [AIQueryResult!]!
     getAIQuery(id: ID!): AIQueryResult
+    
+    # AI Queries without authentication (development only)
+    getAIQueryHistoryPublic(limit: Int): [AIQueryResult!]!
+    getAIQueryPublic(id: ID!): AIQueryResult
   }
 
   type Mutation {

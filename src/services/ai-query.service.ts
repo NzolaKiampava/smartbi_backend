@@ -5,6 +5,8 @@ export interface GeminiConfig {
   model?: string;
   maxTokens?: number;
   temperature?: number;
+  maxRetries?: number;
+  retryDelay?: number;
 }
 
 export interface AIQueryOptions {
@@ -51,43 +53,102 @@ export class AIQueryService {
       model: 'gemini-1.5-flash',
       maxTokens: 2048,
       temperature: 0.1,
+      maxRetries: 3,
+      retryDelay: 1000,
       ...geminiConfig
     };
   }
 
   async translateToSQL(options: AIQueryOptions): Promise<AIQueryResult> {
     try {
+      // Validate API key before making request
+      if (!this.geminiConfig.apiKey || this.geminiConfig.apiKey.trim() === '') {
+        return {
+          generatedQuery: "SELECT 'API key not configured' AS error;",
+          queryType: 'ERROR',
+          confidence: 0,
+          explanation: 'Gemini API key is not configured. Please check your environment variables.'
+        };
+      }
+
       const prompt = this.buildSQLPrompt(options);
-      const response = await this.callGeminiAPI(prompt);
+      const response = await this.callGeminiAPIWithRetry(prompt);
       
       return this.parseSQLResponse(response, options.connectionType);
     } catch (error) {
       console.error('Error translating to SQL:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Unknown error';
+      let explanation = 'An unexpected error occurred while translating the query.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        if (error.message.includes('503')) {
+          explanation = 'O serviço Gemini está temporariamente indisponível. Tente novamente em alguns minutos.';
+        } else if (error.message.includes('429')) {
+          explanation = 'Limite de requisições excedido. Aguarde alguns minutos antes de tentar novamente.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          explanation = 'Erro de autenticação. Verifique se a API key do Gemini está configurada corretamente.';
+        } else if (error.message.includes('400')) {
+          explanation = 'Erro na requisição. Verifique se a consulta está bem formatada.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          explanation = 'Erro de conexão. Verifique sua conexão com a internet.';
+        }
+      }
+      
       return {
-        generatedQuery: "SELECT 'Translation error' AS error;",
+        generatedQuery: `SELECT '${errorMessage}' AS error;`,
         queryType: 'ERROR',
         confidence: 0,
-        explanation: `Failed to translate query: ${error instanceof Error ? error.message : 'Unknown error'}`
+        explanation
       };
     }
   }
 
-async translateToAPICall(options: Omit<AIQueryOptions, 'schemaInfo'>): Promise<AIQueryResult> {
-  try {
-    const prompt = this.buildAPIPrompt(options as AIQueryOptions);
-    const response = await this.callGeminiAPI(prompt);
-    
-    return this.parseAPIResponse(response);
-  } catch (error) {
-    console.error('Error translating to API call:', error);
-    return {
-      generatedQuery: JSON.stringify({ error: 'Translation failed' }),
-      queryType: 'ERROR',
-      confidence: 0,
-      explanation: `Failed to translate to API call: ${error instanceof Error ? error.message : 'Unknown error'}`
-    };
+  async translateToAPICall(options: Omit<AIQueryOptions, 'schemaInfo'>): Promise<AIQueryResult> {
+    try {
+      // Validate API key before making request
+      if (!this.geminiConfig.apiKey || this.geminiConfig.apiKey.trim() === '') {
+        return {
+          generatedQuery: JSON.stringify({ error: 'API key not configured' }),
+          queryType: 'ERROR',
+          confidence: 0,
+          explanation: 'Gemini API key is not configured. Please check your environment variables.'
+        };
+      }
+
+      const prompt = this.buildAPIPrompt(options as AIQueryOptions);
+      const response = await this.callGeminiAPIWithRetry(prompt);
+      
+      return this.parseAPIResponse(response);
+    } catch (error) {
+      console.error('Error translating to API call:', error);
+      
+      let errorMessage = 'Unknown error';
+      let explanation = 'An unexpected error occurred while translating the query to API call.';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        if (error.message.includes('503')) {
+          explanation = 'O serviço Gemini está temporariamente indisponível. Tente novamente em alguns minutos.';
+        } else if (error.message.includes('429')) {
+          explanation = 'Limite de requisições excedido. Aguarde alguns minutos antes de tentar novamente.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          explanation = 'Erro de autenticação. Verifique se a API key do Gemini está configurada corretamente.';
+        }
+      }
+      
+      return {
+        generatedQuery: JSON.stringify({ error: errorMessage }),
+        queryType: 'ERROR',
+        confidence: 0,
+        explanation
+      };
+    }
   }
-}
 
   private buildSQLPrompt(options: AIQueryOptions): string {
     const { connectionType, database, schemaInfo, naturalQuery } = options;
@@ -119,14 +180,14 @@ Respond with ONLY the SQL query:
     `.trim();
   }
 
-private buildAPIPrompt(options: AIQueryOptions): string {
-const { apiEndpoints, naturalQuery } = options;
+  private buildAPIPrompt(options: AIQueryOptions): string {
+    const { apiEndpoints, naturalQuery } = options;
 
-const endpointsDescription = apiEndpoints?.map(endpoint => 
-    `${endpoint.method} ${endpoint.path} - ${endpoint.description}`
-).join('\n') || 'No endpoints available';
+    const endpointsDescription = apiEndpoints?.map(endpoint => 
+        `${endpoint.method} ${endpoint.path} - ${endpoint.description}`
+    ).join('\n') || 'No endpoints available';
 
-return `
+    return `
 You are an API query translator for REST APIs.
 Convert this natural language query to a REST API call configuration.
 
@@ -159,8 +220,38 @@ If the query cannot be matched to any available endpoint, return:
 }
 
 Respond with ONLY the JSON object:
-`.trim();
-}
+    `.trim();
+  }
+
+  private async callGeminiAPIWithRetry(prompt: string): Promise<string> {
+    let lastError: Error;
+    
+    for (let attempt = 1; attempt <= (this.geminiConfig.maxRetries || 3); attempt++) {
+      try {
+        console.log(`Gemini API attempt ${attempt}/${this.geminiConfig.maxRetries || 3}`);
+        return await this.callGeminiAPI(prompt);
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`Gemini API attempt ${attempt} failed:`, lastError.message);
+        
+        // Don't retry for certain error types
+        if (lastError.message.includes('401') || 
+            lastError.message.includes('403') || 
+            lastError.message.includes('400')) {
+          throw lastError;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        if (attempt < (this.geminiConfig.maxRetries || 3)) {
+          const delay = (this.geminiConfig.retryDelay || 1000) * Math.pow(2, attempt - 1);
+          console.log(`Waiting ${delay}ms before retry...`);
+          await this.sleep(delay);
+        }
+      }
+    }
+    
+    throw lastError!;
+  }
 
   private async callGeminiAPI(prompt: string): Promise<string> {
     const url = `${this.GEMINI_URL}/${this.geminiConfig.model}:generateContent?key=${this.geminiConfig.apiKey}`;
@@ -198,13 +289,17 @@ Respond with ONLY the JSON object:
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API request failed: ${response.status} ${response.statusText}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      throw new Error(`Gemini API request failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data: any = await response.json();
 
     if (!data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid response from Gemini API');
+      if (data?.error) {
+        throw new Error(`Gemini API error: ${data.error.message || 'Unknown API error'}`);
+      }
+      throw new Error('Invalid response from Gemini API - no content generated');
     }
 
     return data.candidates[0].content.parts[0].text;
@@ -365,6 +460,10 @@ Respond with ONLY the JSON object:
       .join('\n\n');
   }
 
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   // Method to update API key at runtime
   updateApiKey(newApiKey: string): void {
     this.geminiConfig.apiKey = newApiKey;
@@ -373,8 +472,15 @@ Respond with ONLY the JSON object:
   // Method to test the API connection
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
+      if (!this.geminiConfig.apiKey || this.geminiConfig.apiKey.trim() === '') {
+        return {
+          success: false,
+          message: 'Gemini API key is not configured'
+        };
+      }
+
       const testPrompt = "Translate 'show tables' to SQL for MySQL database.";
-      const response = await this.callGeminiAPI(testPrompt);
+      const response = await this.callGeminiAPIWithRetry(testPrompt);
       
       return {
         success: true,
@@ -384,6 +490,53 @@ Respond with ONLY the JSON object:
       return {
         success: false,
         message: `Gemini API connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
+    }
+  }
+
+  // Method to check API status
+  async checkAPIStatus(): Promise<{ available: boolean; message: string }> {
+    try {
+      const testResponse = await fetch(`${this.GEMINI_URL}/${this.geminiConfig.model}:generateContent?key=${this.geminiConfig.apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: "Test"
+            }]
+          }]
+        })
+      });
+
+      if (testResponse.status === 503) {
+        return {
+          available: false,
+          message: 'Gemini API is temporarily unavailable (503 Service Unavailable)'
+        };
+      } else if (testResponse.status === 429) {
+        return {
+          available: false,
+          message: 'Gemini API rate limit exceeded (429 Too Many Requests)'
+        };
+      } else if (testResponse.ok || testResponse.status === 400) {
+        // 400 is OK for this test as it means the API is responding
+        return {
+          available: true,
+          message: 'Gemini API is available'
+        };
+      } else {
+        return {
+          available: false,
+          message: `Gemini API returned status: ${testResponse.status}`
+        };
+      }
+    } catch (error) {
+      return {
+        available: false,
+        message: `Failed to check API status: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   }
