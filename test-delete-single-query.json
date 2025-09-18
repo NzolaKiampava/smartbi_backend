@@ -1,0 +1,6 @@
+{
+  "query": "mutation DeleteSingleQuery($id: ID!) { deleteAIQueryPublic(id: $id) }",
+  "variables": {
+    "id": "SUBSTITUA_PELO_ID_DA_CONSULTA"
+  }
+}

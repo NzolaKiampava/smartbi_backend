@@ -101,6 +101,16 @@ export const dataQueryTypeDefs = `#graphql
     data: JSON!
   }
 
+  type DeleteResult {
+    deletedCount: Int!
+    errors: [String!]!
+  }
+
+  type ClearHistoryResult {
+    deletedCount: Int!
+    message: String!
+  }
+
   type SchemaInfo {
     tables: [TableInfo!]!
     totalTables: Int!
@@ -160,6 +170,11 @@ export const dataQueryTypeDefs = `#graphql
     
     # Execute AI query without authentication (development only)
     executeAIQueryPublic(input: AIQueryInput!): AIQueryResult!
+    
+    # Delete AI queries without authentication (development only)
+    deleteAIQueryPublic(id: ID!): Boolean!
+    deleteMultipleAIQueriesPublic(ids: [ID!]!): DeleteResult!
+    clearAIQueryHistoryPublic: ClearHistoryResult!
   }
 
   type ConnectionTestResult {

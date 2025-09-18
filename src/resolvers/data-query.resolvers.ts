@@ -473,6 +473,99 @@ export const dataQueryResolvers = {
       } catch (error) {
         throw new Error(`Failed to execute AI query: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
+    },
+
+    // Delete single AI query without authentication (development only)
+    deleteAIQueryPublic: async (
+      _: any,
+      { id }: { id: string },
+      context: GraphQLContext
+    ): Promise<boolean> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        const { error } = await context.req.app.locals.supabase
+          .from('ai_query_history')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          throw new Error(`Failed to delete query: ${error.message}`);
+        }
+
+        return true;
+      } catch (error) {
+        throw new Error(`Failed to delete query: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    },
+
+    // Delete multiple AI queries without authentication (development only)
+    deleteMultipleAIQueriesPublic: async (
+      _: any,
+      { ids }: { ids: string[] },
+      context: GraphQLContext
+    ): Promise<{ deletedCount: number; errors: string[] }> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        const { error, count } = await context.req.app.locals.supabase
+          .from('ai_query_history')
+          .delete()
+          .in('id', ids);
+
+        if (error) {
+          throw new Error(`Failed to delete queries: ${error.message}`);
+        }
+
+        return {
+          deletedCount: count || 0,
+          errors: []
+        };
+      } catch (error) {
+        return {
+          deletedCount: 0,
+          errors: [error instanceof Error ? error.message : 'Unknown error']
+        };
+      }
+    },
+
+    // Delete all AI query history without authentication (development only)
+    clearAIQueryHistoryPublic: async (
+      _: any,
+      __: any,
+      context: GraphQLContext
+    ): Promise<{ deletedCount: number; message: string }> => {
+      // Only available in development mode
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('This endpoint is only available in development mode');
+      }
+
+      try {
+        // Get Demo Company ID
+        const demoCompanyId = 'f21b31ec-6487-413a-99f7-3a6a1a34b171';
+
+        const { error, count } = await context.req.app.locals.supabase
+          .from('ai_query_history')
+          .delete()
+          .eq('company_id', demoCompanyId);
+
+        if (error) {
+          throw new Error(`Failed to clear query history: ${error.message}`);
+        }
+
+        return {
+          deletedCount: count || 0,
+          message: `Successfully deleted ${count || 0} queries from history`
+        };
+      } catch (error) {
+        throw new Error(`Failed to clear query history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   },
 

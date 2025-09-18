@@ -1,0 +1,10 @@
+{
+  "query": "mutation DeleteMultipleQueries($ids: [ID!]!) { deleteMultipleAIQueriesPublic(ids: $ids) { deletedCount errors } }",
+  "variables": {
+    "ids": [
+      "SUBSTITUA_PELO_ID_1",
+      "SUBSTITUA_PELO_ID_2",
+      "SUBSTITUA_PELO_ID_3"
+    ]
+  }
+}
