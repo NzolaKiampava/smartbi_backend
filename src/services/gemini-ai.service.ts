@@ -85,20 +85,44 @@ export class GeminiAIService {
       return this.generateFallbackInsights(parsedData, fileUpload);
     }
 
-    try {
-      const prompt = this.buildAnalysisPrompt(parsedData, fileUpload, options);
-      console.log('🤖 Sending analysis request to Gemini...');
-      
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const analysisText = response.text();
-      
-      console.log('✅ Received Gemini analysis response');
-      return this.parseInsightsFromText(analysisText);
-    } catch (error) {
-      console.error('Error generating Gemini insights:', error);
-      return this.generateFallbackInsights(parsedData, fileUpload);
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const prompt = this.buildAnalysisPrompt(parsedData, fileUpload, options);
+        console.log(`🤖 Sending analysis request to Gemini... (Attempt ${attempt}/${maxRetries})`);
+        
+        const result = await this.model.generateContent(prompt);
+        const response = await result.response;
+        const analysisText = response.text();
+        
+        console.log('✅ Received Gemini analysis response');
+        return this.parseInsightsFromText(analysisText);
+      } catch (error: any) {
+        console.error(`❌ Error generating Gemini insights (Attempt ${attempt}/${maxRetries}):`, error);
+        
+        if (attempt === maxRetries) {
+          // Last attempt failed, return fallback insights
+          console.log('🔄 Max retries reached, returning fallback insights');
+          return this.generateFallbackInsights(parsedData, fileUpload);
+        }
+        
+        if (error.status === 503 || error.status === 429) {
+          // Service unavailable or rate limited - wait before retry
+          const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          // Other errors - don't retry
+          console.log('🔄 Non-retryable error, returning fallback insights');
+          return this.generateFallbackInsights(parsedData, fileUpload);
+        }
+      }
     }
+    
+    // This should never be reached, but just in case
+    return this.generateFallbackInsights(parsedData, fileUpload);
   }
 
   /**
@@ -236,9 +260,24 @@ ${insights.map(i => `- ${i.title}: ${i.description}`).join('\n')}
 Provide a 2-3 sentence executive summary highlighting the most important findings.
 `;
 
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      return response.text().trim();
+      // Retry logic for summary generation
+      const maxRetries = 2;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await this.model.generateContent(prompt);
+          const response = await result.response;
+          return response.text().trim();
+        } catch (error: any) {
+          if (attempt === maxRetries || (error.status !== 503 && error.status !== 429)) {
+            throw error;
+          }
+          console.log(`⏳ Summary generation retry ${attempt + 1}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+      
+      // Fallback if all retries failed
+      return `Analysis of ${fileUpload.originalName}: ${insights.length} insights discovered from ${parsedData.metadata.rowCount} records.`;
     } catch (error) {
       console.error('Error generating summary:', error);
       return `Analysis of ${fileUpload.originalName}: ${insights.length} insights discovered from ${parsedData.metadata.rowCount} records.`;
@@ -263,13 +302,27 @@ ${insights.map(i => `- ${i.title}: ${i.description}`).join('\n')}
 Return only a JSON array of recommendations: ["recommendation 1", "recommendation 2", ...]
 `;
 
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text().trim();
-      
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      // Retry logic for recommendations generation
+      const maxRetries = 2;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await this.model.generateContent(prompt);
+          const response = await result.response;
+          const text = response.text().trim();
+          
+          const jsonMatch = text.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+          }
+          break; // Exit retry loop if successful but no JSON found
+        } catch (error: any) {
+          console.error(`❌ Error generating recommendations (Attempt ${attempt}/${maxRetries}):`, error);
+          if (attempt === maxRetries || (error.status !== 503 && error.status !== 429)) {
+            break; // Exit retry loop
+          }
+          console.log(`⏳ Recommendations generation retry ${attempt + 1}/${maxRetries}...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
       }
     } catch (error) {
       console.error('Error generating recommendations:', error);
