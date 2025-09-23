@@ -1,11 +1,19 @@
-export const dataQueryTypeDefs = `#graphql
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.dataQueryTypeDefs = void 0;
+exports.dataQueryTypeDefs = `#graphql
   enum ConnectionType {
     MYSQL
     POSTGRESQL
     SUPABASE
-    FIREBASE
     API_REST
     API_GRAPHQL
+    FIREBASE
+    MONGODB
+    REDIS
+    ELASTICSEARCH
+    CASSANDRA
+    DYNAMODB
   }
 
   enum ConnectionStatus {
@@ -18,6 +26,7 @@ export const dataQueryTypeDefs = `#graphql
     id: ID!
     companyId: ID!
     name: String!
+    description: String
     type: ConnectionType!
     status: ConnectionStatus!
     config: DataConnectionConfig!
@@ -46,6 +55,7 @@ export const dataQueryTypeDefs = `#graphql
 
   input DataConnectionInput {
     name: String!
+    description: String
     type: ConnectionType!
     config: DataConnectionConfigInput!
     isDefault: Boolean
@@ -187,3 +197,4 @@ export const dataQueryTypeDefs = `#graphql
 
   scalar JSON
 `;
+//# sourceMappingURL=data-query.schema.js.map

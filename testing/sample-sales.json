@@ -1,0 +1,22 @@
+{
+  "sales_data": [
+    {"date": "2024-01-15", "product": "Widget A", "amount": 1250.75, "quantity": 15, "region": "North"},
+    {"date": "2024-01-16", "product": "Widget B", "amount": 2100.50, "quantity": 25, "region": "South"},
+    {"date": "2024-01-17", "product": "Widget C", "amount": 1875.25, "quantity": 20, "region": "East"},
+    {"date": "2024-01-18", "product": "Widget A", "amount": 1425.00, "quantity": 18, "region": "West"},
+    {"date": "2024-01-19", "product": "Widget B", "amount": 1950.75, "quantity": 23, "region": "North"},
+    {"date": "2024-01-20", "product": "Widget C", "amount": 2275.50, "quantity": 28, "region": "South"}
+  ],
+  "summary": {
+    "total_revenue": 10877.75,
+    "total_quantity": 129,
+    "period": "2024-01-15 to 2024-01-20",
+    "best_performing_product": "Widget C",
+    "best_performing_region": "South"
+  },
+  "metadata": {
+    "generated_by": "Sales Analytics System",
+    "timestamp": "2024-01-21T10:30:00Z",
+    "version": "1.0"
+  }
+}

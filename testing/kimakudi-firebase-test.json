@@ -1,0 +1,217 @@
+{
+  "description": "Teste Firebase com credenciais kimakudi-db",
+  "baseURL": "http://localhost:4000/graphql",
+  "firebaseConfig": {
+    "apiKey": "AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8",
+    "authDomain": "kimakudi-db.firebaseapp.com",
+    "projectId": "kimakudi-db",
+    "storageBucket": "kimakudi-db.firebasestorage.app",
+    "messagingSenderId": "931710527943",
+    "appId": "1:931710527943:web:536cfe85e677fdfa9551e2",
+    "measurementId": "G-31580ZKV4X"
+  },
+  "testScenarios": [
+    {
+      "name": "Teste de Conexão Firebase Kimakudi",
+      "description": "Testa conexão com o projeto kimakudi-db",
+      "query": "mutation TestKimakudiFirebase { testConnection(input: { type: FIREBASE, name: \"Kimakudi Firebase\", config: { apiUrl: \"kimakudi-db\", apiKey: \"AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8\" } }) { success message latency } }",
+      "expectedFields": ["success", "message"],
+      "notes": [
+        "Esta conexão usa o projeto kimakudi-db",
+        "Se retornar 403, é normal - significa que o Firebase está respondendo",
+        "Para acesso completo, configure as regras do Firestore"
+      ]
+    },
+    {
+      "name": "Criar Conexão Kimakudi Firebase",
+      "description": "Cria conexão para testes com kimakudi-db",
+      "query": "mutation CreateKimakudiConnection { createDataConnectionPublic(input: { type: FIREBASE, name: \"Kimakudi DB\", config: { apiUrl: \"kimakudi-db\", apiKey: \"AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8\" } }) { id name type status config { apiUrl } } }",
+      "expectedFields": ["id", "name", "type", "status"],
+      "saveResponse": "kimakudiConnectionId"
+    },
+    {
+      "name": "Verificar Schema Kimakudi",
+      "description": "Obtém informações do schema do Firestore",
+      "query": "query GetKimakudiSchema($connectionId: String!) { getSchemaInfo(connectionId: $connectionId) { tables { name columns { name type } } totalTables } }",
+      "variables": {
+        "connectionId": "{{kimakudiConnectionId}}"
+      },
+      "expectedFields": ["tables", "totalTables"]
+    },
+    {
+      "name": "Consulta IA - Usuários",
+      "description": "Busca usuários usando linguagem natural",
+      "query": "mutation QueryKimakudiUsers($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"buscar todos os usuários\" }) { id naturalQuery generatedQuery results { data } executionTime status error } }",
+      "variables": {
+        "connectionId": "{{kimakudiConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results", "status"]
+    },
+    {
+      "name": "Consulta IA - Dados Ativos",
+      "description": "Busca dados com status ativo",
+      "query": "mutation QueryActiveData($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"buscar todos os dados ativos\" }) { id naturalQuery generatedQuery results { data } executionTime status error } }",
+      "variables": {
+        "connectionId": "{{kimakudiConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results", "status"]
+    },
+    {
+      "name": "Consulta IA - Produtos por Preço",
+      "description": "Busca produtos com filtro de preço",
+      "query": "mutation QueryExpensiveProducts($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"produtos com preço maior que 100\" }) { id naturalQuery generatedQuery results { data } executionTime status error } }",
+      "variables": {
+        "connectionId": "{{kimakudiConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results", "status"]
+    },
+    {
+      "name": "Consulta IA - Dados Recentes",
+      "description": "Busca dados criados recentemente",
+      "query": "mutation QueryRecentData($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"dados criados nos últimos 30 dias\" }) { id naturalQuery generatedQuery results { data } executionTime status error } }",
+      "variables": {
+        "connectionId": "{{kimakudiConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results", "status"]
+    },
+    {
+      "name": "Listar Conexões",
+      "description": "Lista todas as conexões incluindo a do kimakudi-db",
+      "query": "query ListAllConnections { getDataConnectionsPublic { id name type status config { apiUrl } createdAt } }",
+      "expectedFields": ["id", "name", "type", "status"]
+    },
+    {
+      "name": "Histórico de Consultas Kimakudi",
+      "description": "Visualiza histórico das consultas no kimakudi-db",
+      "query": "query GetKimakudiHistory { getAIQueryHistoryPublic(limit: 20) { id naturalQuery generatedQuery status executionTime createdAt connection { name type } } }",
+      "expectedFields": ["naturalQuery", "generatedQuery", "status"]
+    }
+  ],
+  "quickTestCommands": {
+    "description": "Comandos rápidos para testar via cURL",
+    "testConnection": {
+      "description": "Testa conexão com kimakudi-db",
+      "command": "curl -X POST http://localhost:4000/graphql -H \"Content-Type: application/json\" -d '{\"query\": \"mutation { testConnection(input: { type: FIREBASE, name: \\\"Kimakudi Test\\\", config: { apiUrl: \\\"kimakudi-db\\\", apiKey: \\\"AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8\\\" } }) { success message latency } }\"}'"
+    },
+    "createConnection": {
+      "description": "Cria conexão kimakudi-db",
+      "command": "curl -X POST http://localhost:4000/graphql -H \"Content-Type: application/json\" -d '{\"query\": \"mutation { createDataConnectionPublic(input: { type: FIREBASE, name: \\\"Kimakudi DB\\\", config: { apiUrl: \\\"kimakudi-db\\\", apiKey: \\\"AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8\\\" } }) { id name type status } }\"}'"
+    },
+    "aiQuery": {
+      "description": "Executa consulta IA (substitua CONNECTION_ID)",
+      "command": "curl -X POST http://localhost:4000/graphql -H \"Content-Type: application/json\" -d '{\"query\": \"mutation { executeAIQueryPublic(input: { connectionId: \\\"CONNECTION_ID\\\", naturalQuery: \\\"buscar todos os usuários\\\" }) { naturalQuery generatedQuery results { data } status } }\"}'"
+    }
+  },
+  "firestoreSetup": {
+    "description": "Configuração do Firestore para kimakudi-db",
+    "steps": [
+      "1. Acesse https://console.firebase.google.com/project/kimakudi-db",
+      "2. Vá para Firestore Database",
+      "3. Configure as regras de segurança para permitir leitura (para testes):",
+      "4. Crie algumas coleções de exemplo para testar"
+    ],
+    "testRules": {
+      "description": "Regras de teste para permitir leitura (NÃO usar em produção)",
+      "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read: if true;\n      allow write: if false; // Apenas leitura para testes\n    }\n  }\n}"
+    },
+    "sampleCollections": {
+      "users": [
+        {
+          "id": "user1",
+          "name": "João Silva",
+          "email": "joao@kimakudi.com",
+          "active": true,
+          "role": "admin",
+          "createdAt": "2024-01-15T10:30:00Z"
+        },
+        {
+          "id": "user2",
+          "name": "Maria Santos",
+          "email": "maria@kimakudi.com",
+          "active": true,
+          "role": "user",
+          "createdAt": "2024-02-20T14:15:00Z"
+        }
+      ],
+      "products": [
+        {
+          "id": "prod1",
+          "name": "Produto A",
+          "price": 150,
+          "category": "categoria1",
+          "active": true,
+          "inStock": true
+        },
+        {
+          "id": "prod2",
+          "name": "Produto B",
+          "price": 75,
+          "category": "categoria2",
+          "active": true,
+          "inStock": false
+        }
+      ],
+      "orders": [
+        {
+          "id": "order1",
+          "userId": "user1",
+          "productId": "prod1",
+          "total": 150,
+          "status": "completed",
+          "createdAt": "2024-03-01T09:00:00Z"
+        }
+      ]
+    }
+  },
+  "expectedQueries": {
+    "description": "Exemplos de consultas que o AI deve gerar",
+    "examples": [
+      {
+        "naturalQuery": "buscar todos os usuários",
+        "expectedGenerated": "{\"collection\": \"users\", \"operation\": \"get\", \"filters\": []}",
+        "description": "Consulta simples sem filtros"
+      },
+      {
+        "naturalQuery": "buscar usuários ativos",
+        "expectedGenerated": "{\"collection\": \"users\", \"operation\": \"get\", \"filters\": [{\"field\": \"active\", \"operator\": \"==\", \"value\": true}]}",
+        "description": "Consulta com filtro booleano"
+      },
+      {
+        "naturalQuery": "produtos com preço maior que 100",
+        "expectedGenerated": "{\"collection\": \"products\", \"operation\": \"get\", \"filters\": [{\"field\": \"price\", \"operator\": \">\", \"value\": 100}]}",
+        "description": "Consulta com filtro numérico"
+      },
+      {
+        "naturalQuery": "dados criados nos últimos 30 dias",
+        "expectedGenerated": "{\"collection\": \"data\", \"operation\": \"get\", \"filters\": [{\"field\": \"createdAt\", \"operator\": \">=\", \"value\": \"2024-02-19T00:00:00Z\"}]}",
+        "description": "Consulta com filtro de data"
+      }
+    ]
+  },
+  "troubleshooting": {
+    "commonIssues": [
+      {
+        "issue": "403 Forbidden ao testar conexão",
+        "solution": "Normal para projetos Firebase protegidos. Indica que a conexão está funcionando.",
+        "action": "Configure regras do Firestore para permitir leitura se quiser dados reais"
+      },
+      {
+        "issue": "Consultas retornam dados vazios",
+        "solution": "Verifique se existem coleções e documentos no Firestore",
+        "action": "Acesse o console Firebase e adicione dados de exemplo"
+      },
+      {
+        "issue": "Erro de autenticação",
+        "solution": "Verifique se a API key está correta",
+        "action": "Confirme a API key no console Firebase"
+      }
+    ]
+  },
+  "notes": [
+    "Esta configuração usa o projeto Firebase kimakudi-db",
+    "A API key está visível para facilitar testes de desenvolvimento",
+    "Em produção, use variáveis de ambiente para credenciais",
+    "Configure regras do Firestore adequadas para seu caso de uso",
+    "Todas as consultas são salvas no histórico para análise"
+  ]
+}

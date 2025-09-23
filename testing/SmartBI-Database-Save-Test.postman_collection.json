@@ -1,0 +1,311 @@
+{
+  "info": {
+    "name": "SmartBI - Database Save Test",
+    "description": "Teste específico para salvar conexões Firebase/MongoDB no banco de dados",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Test Firebase Database Save",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has data', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('data');",
+              "    pm.expect(jsonData.data).to.have.property('createDataConnectionPublic');",
+              "});",
+              "",
+              "pm.test('Connection was created with ID', function () {",
+              "    const jsonData = pm.response.json();",
+              "    const connection = jsonData.data.createDataConnectionPublic;",
+              "    pm.expect(connection).to.have.property('id');",
+              "    pm.expect(connection.id).to.be.a('string');",
+              "    pm.environment.set('firebase_connection_id', connection.id);",
+              "    console.log('Firebase Connection ID saved:', connection.id);",
+              "});",
+              "",
+              "pm.test('Connection has correct type', function () {",
+              "    const jsonData = pm.response.json();",
+              "    const connection = jsonData.data.createDataConnectionPublic;",
+              "    pm.expect(connection.type).to.equal('FIREBASE');",
+              "});",
+              "",
+              "pm.test('No GraphQL errors', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.not.have.property('errors');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreateFirebaseConnection { createDataConnectionPublic(input: { type: FIREBASE, name: \\\"Kimakudi Firebase DB\\\", description: \\\"Conexão Firebase para testes de banco\\\", config: { apiUrl: \\\"kimakudi-db\\\", apiKey: \\\"AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8\\\" } }) { id name type status description config { apiUrl } createdAt } }\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": ["{{baseUrl}}"],
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "2. Verify Firebase Connection in Database",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Firebase connection exists in database', function () {",
+              "    const jsonData = pm.response.json();",
+              "    const connections = jsonData.data.getDataConnectionsPublic;",
+              "    ",
+              "    const firebaseConnection = connections.find(conn => conn.type === 'FIREBASE');",
+              "    pm.expect(firebaseConnection).to.not.be.undefined;",
+              "    pm.expect(firebaseConnection.name).to.include('Kimakudi');",
+              "    ",
+              "    console.log('Found Firebase connection:', firebaseConnection.name);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query ListAllConnections { getDataConnectionsPublic { id name type status description config { apiUrl } createdAt } }\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": ["{{baseUrl}}"],
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "3. Test MongoDB Database Save",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('MongoDB connection was created', function () {",
+              "    const jsonData = pm.response.json();",
+              "    const connection = jsonData.data.createDataConnectionPublic;",
+              "    pm.expect(connection).to.have.property('id');",
+              "    pm.expect(connection.type).to.equal('MONGODB');",
+              "    pm.environment.set('mongodb_connection_id', connection.id);",
+              "    console.log('MongoDB Connection ID saved:', connection.id);",
+              "});",
+              "",
+              "pm.test('No GraphQL errors', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.not.have.property('errors');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation CreateMongoConnection { createDataConnectionPublic(input: { type: MONGODB, name: \\\"Test MongoDB\\\", description: \\\"Conexão MongoDB para testes\\\", config: { connectionString: \\\"mongodb://localhost:27017/testdb\\\" } }) { id name type status description config { connectionString } createdAt } }\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": ["{{baseUrl}}"],
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "4. Count Total Connections",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Multiple connections exist', function () {",
+              "    const jsonData = pm.response.json();",
+              "    const connections = jsonData.data.getDataConnectionsPublic;",
+              "    pm.expect(connections.length).to.be.greaterThan(0);",
+              "    ",
+              "    const firebaseCount = connections.filter(c => c.type === 'FIREBASE').length;",
+              "    const mongoCount = connections.filter(c => c.type === 'MONGODB').length;",
+              "    ",
+              "    console.log('Total connections:', connections.length);",
+              "    console.log('Firebase connections:', firebaseCount);",
+              "    console.log('MongoDB connections:', mongoCount);",
+              "    ",
+              "    pm.expect(firebaseCount).to.be.greaterThan(0);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query CountConnections { getDataConnectionsPublic { id name type status createdAt } }\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": ["{{baseUrl}}"],
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "5. Test Connection Before Save",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Connection test completed', function () {",
+              "    const jsonData = pm.response.json();",
+              "    const result = jsonData.data.testConnection;",
+              "    pm.expect(result).to.have.property('success');",
+              "    pm.expect(result).to.have.property('message');",
+              "    ",
+              "    console.log('Connection test result:', result.message);",
+              "    console.log('Connection successful:', result.success);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"mutation TestFirebaseConnection { testConnection(input: { type: FIREBASE, name: \\\"Test Firebase\\\", config: { apiUrl: \\\"kimakudi-db\\\", apiKey: \\\"AIzaSyDARAd1d_mt6ebQx4yz0SF41dLKPaNWuf8\\\" } }) { success message latency } }\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": ["{{baseUrl}}"],
+          "path": ["graphql"]
+        }
+      }
+    },
+    {
+      "name": "6. Clean Up - Delete Test Connections",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Cleanup successful', function () {",
+              "    const jsonData = pm.response.json();",
+              "    // Note: This assumes you have a delete mutation",
+              "    // If not available, this test will help identify that",
+              "    console.log('Cleanup response:', JSON.stringify(jsonData, null, 2));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"query ListForCleanup { getDataConnectionsPublic { id name type createdAt } }\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/graphql",
+          "host": ["{{baseUrl}}"],
+          "path": ["graphql"]
+        }
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Ensure we have base URL set",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    pm.environment.set('baseUrl', 'http://localhost:4000');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    }
+  ]
+}

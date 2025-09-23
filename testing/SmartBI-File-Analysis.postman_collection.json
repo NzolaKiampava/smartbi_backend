@@ -1,0 +1,681 @@
+{
+  "info": {
+    "name": "SmartBI File Analysis",
+    "description": "Complete testing collection for SmartBI file upload and AI analysis features",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "graphqlEndpoint",
+      "value": "{{baseUrl}}/graphql",
+      "type": "string"
+    },
+    {
+      "key": "uploadedFileId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "insightId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "File Upload & Analysis",
+      "item": [
+        {
+          "name": "Upload CSV File and Analyze",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "operations",
+                  "value": "{\"query\":\"mutation UploadAndAnalyzeFile($file: Upload!, $description: String, $tags: [String!], $options: AnalysisOptionsInput) { uploadAndAnalyzeFile(input: { file: $file, description: $description, tags: $tags, analysisOptions: $options }) { id title status summary executionTime insights { id type title description value confidence importance createdAt } recommendations dataQuality { score completeness accuracy consistency validity issues { type description severity count examples } } visualizations { type title description data } fileUpload { id originalName fileType size uploadedAt } createdAt updatedAt } }\",\"variables\":{\"file\":null,\"description\":\"Sample CSV data for testing\",\"tags\":[\"test\",\"csv\",\"sample\"],\"options\":{\"analyzeRevenue\":true,\"analyzeTables\":true,\"generateInsights\":true,\"checkDataQuality\":true,\"generateVisualizations\":true}}}",
+                  "type": "text"
+                },
+                {
+                  "key": "map",
+                  "value": "{\"0\":[\"variables.file\"]}",
+                  "type": "text"
+                },
+                {
+                  "key": "0",
+                  "type": "file",
+                  "src": "sample_data.csv",
+                  "description": "Upload a CSV file for testing"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            },
+            "description": "Upload a CSV file and perform comprehensive analysis"
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Excel File and Analyze",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "operations",
+                  "value": "{\"query\":\"mutation UploadAndAnalyzeFile($file: Upload!, $options: AnalysisOptionsInput) { uploadAndAnalyzeFile(input: { file: $file, description: \\\"Excel financial data analysis\\\", analysisOptions: $options }) { id title status summary insights { type title description confidence importance } dataQuality { score issues { type description severity } } visualizations { type title data } } }\",\"variables\":{\"file\":null,\"options\":{\"analyzeRevenue\":true,\"generateVisualizations\":true}}}",
+                  "type": "text"
+                },
+                {
+                  "key": "map",
+                  "value": "{\"0\":[\"variables.file\"]}",
+                  "type": "text"
+                },
+                {
+                  "key": "0",
+                  "type": "file",
+                  "src": "financial_data.xlsx",
+                  "description": "Upload an Excel file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload PDF Document and Analyze",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "operations",
+                  "value": "{\"query\":\"mutation UploadAndAnalyzeFile($file: Upload!) { uploadAndAnalyzeFile(input: { file: $file, description: \\\"Business report analysis\\\", analysisOptions: { analyzeTables: true, generateInsights: true, customPrompts: [\\\"Extract key business metrics\\\", \\\"Identify action items\\\", \\\"Summarize financial performance\\\"] } }) { id title summary insights { type title description importance } recommendations } }\",\"variables\":{\"file\":null}}",
+                  "type": "text"
+                },
+                {
+                  "key": "map",
+                  "value": "{\"0\":[\"variables.file\"]}",
+                  "type": "text"
+                },
+                {
+                  "key": "0",
+                  "type": "file",
+                  "src": "business_report.pdf",
+                  "description": "Upload a PDF document"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload SQL File and Analyze",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "operations",
+                  "value": "{\"query\":\"mutation UploadAndAnalyzeFile($file: Upload!) { uploadAndAnalyzeFile(input: { file: $file, description: \\\"Database schema analysis\\\", analysisOptions: { analyzeTables: true, generateInsights: true, customPrompts: [\\\"Analyze query performance\\\", \\\"Check for security vulnerabilities\\\", \\\"Suggest optimization opportunities\\\"] } }) { id title summary insights { type title description confidence } recommendations } }\",\"variables\":{\"file\":null}}",
+                  "type": "text"
+                },
+                {
+                  "key": "map",
+                  "value": "{\"0\":[\"variables.file\"]}",
+                  "type": "text"
+                },
+                {
+                  "key": "0",
+                  "type": "file",
+                  "src": "database_schema.sql",
+                  "description": "Upload a SQL file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revenue Analysis Focus",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "operations",
+                  "value": "{\"query\":\"mutation RevenueAnalysis($file: Upload!) { uploadAndAnalyzeFile(input: { file: $file, description: \\\"Revenue trend analysis\\\", analysisOptions: { analyzeRevenue: true, generateVisualizations: true, generateInsights: true, customPrompts: [\\\"Calculate monthly revenue growth\\\", \\\"Identify seasonal patterns\\\", \\\"Forecast next quarter revenue\\\", \\\"Analyze revenue by product category\\\"] } }) { id title summary insights { type title description value confidence importance } visualizations { type title description data } recommendations } }\",\"variables\":{\"file\":null}}",
+                  "type": "text"
+                },
+                {
+                  "key": "map",
+                  "value": "{\"0\":[\"variables.file\"]}",
+                  "type": "text"
+                },
+                {
+                  "key": "0",
+                  "type": "file",
+                  "src": "revenue_data.csv",
+                  "description": "Upload revenue data file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Query & Retrieve",
+      "item": [
+        {
+          "name": "Get Analysis Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetAnalysisReport($id: ID!) { getAnalysisReport(id: $id) { id title status summary executionTime insights { id type title description value confidence importance createdAt } recommendations dataQuality { score completeness accuracy consistency validity issues { type description severity count examples } } visualizations { id type title description data config } fileUpload { id originalName fileType size uploadedAt metadata } createdAt updatedAt error } }\",\n  \"variables\": {\n    \"id\": \"{{reportId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Analysis Reports",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query ListAnalysisReports($limit: Int, $offset: Int) { listAnalysisReports(limit: $limit, offset: $offset) { id title status summary executionTime fileUpload { originalName fileType size } createdAt updatedAt } }\",\n  \"variables\": {\n    \"limit\": 20,\n    \"offset\": 0\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get File Upload Details",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetFileUpload($id: ID!) { getFileUpload(id: $id) { id filename originalName mimetype encoding size path fileType uploadedAt metadata analysisReport { id title status summary } } }\",\n  \"variables\": {\n    \"id\": \"{{uploadedFileId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Insights by Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetInsightsByReport($reportId: ID!) { getInsightsByReport(reportId: $reportId) { id type title description value confidence importance metadata createdAt } }\",\n  \"variables\": {\n    \"reportId\": \"{{reportId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Reports",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query SearchReports($query: String!, $limit: Int) { searchReports(query: $query, limit: $limit) { id title summary fileUpload { originalName fileType } createdAt } }\",\n  \"variables\": {\n    \"query\": \"revenue\",\n    \"limit\": 10\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reports by File Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query GetReportsByFileType($fileType: FileType!) { getReportsByFileType(fileType: $fileType) { id title status fileUpload { originalName size } createdAt } }\",\n  \"variables\": {\n    \"fileType\": \"CSV\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analysis Operations",
+      "item": [
+        {
+          "name": "Reanalyze File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ReanalyzeFile($fileId: ID!, $options: AnalysisOptionsInput) { reanalyzeFile(fileId: $fileId, options: $options) { id title status summary insights { type title description confidence importance } recommendations } }\",\n  \"variables\": {\n    \"fileId\": \"{{uploadedFileId}}\",\n    \"options\": {\n      \"analyzeRevenue\": true,\n      \"checkDataQuality\": true,\n      \"generateVisualizations\": true,\n      \"customPrompts\": [\n        \"Focus on quarterly performance\",\n        \"Identify cost reduction opportunities\"\n      ]\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Custom Analysis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation GenerateCustomAnalysis($fileId: ID!, $prompts: [String!]!) { generateCustomAnalysis(fileId: $fileId, prompts: $prompts) { id title summary insights { type title description confidence importance } recommendations } }\",\n  \"variables\": {\n    \"fileId\": \"{{uploadedFileId}}\",\n    \"prompts\": [\n      \"Analyze customer segmentation patterns\",\n      \"Identify seasonal trends in sales data\",\n      \"Calculate customer lifetime value\",\n      \"Recommend pricing optimization strategies\"\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Custom Insight",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation AddCustomInsight($reportId: ID!, $insight: String!) { addCustomInsight(reportId: $reportId, insight: $insight) { id type title description confidence importance createdAt } }\",\n  \"variables\": {\n    \"reportId\": \"{{reportId}}\",\n    \"insight\": \"Based on manual review, the data shows strong correlation between marketing spend and customer acquisition in Q3.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Report Title",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateReportTitle($reportId: ID!, $title: String!) { updateReportTitle(reportId: $reportId, title: $title) { id title updatedAt } }\",\n  \"variables\": {\n    \"reportId\": \"{{reportId}}\",\n    \"title\": \"Q3 Revenue Analysis - Updated\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Export & Download",
+      "item": [
+        {
+          "name": "Export Report as PDF",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExportReport($input: ReportExportInput!) { exportReport(input: $input) { url filename format size expiresAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"reportId\": \"{{reportId}}\",\n      \"format\": \"PDF\",\n      \"includeRawData\": false,\n      \"includeVisualizations\": true,\n      \"customizations\": {\n        \"companyName\": \"Your Company\",\n        \"includeLogo\": true,\n        \"headerColor\": \"#007cba\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Report as Excel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExportReport($input: ReportExportInput!) { exportReport(input: $input) { url filename format size expiresAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"reportId\": \"{{reportId}}\",\n      \"format\": \"EXCEL\",\n      \"includeRawData\": true,\n      \"includeVisualizations\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Report as JSON",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExportReport($input: ReportExportInput!) { exportReport(input: $input) { url filename format size expiresAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"reportId\": \"{{reportId}}\",\n      \"format\": \"JSON\",\n      \"includeRawData\": true,\n      \"includeVisualizations\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Report as HTML",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExportReport($input: ReportExportInput!) { exportReport(input: $input) { url filename format size expiresAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"reportId\": \"{{reportId}}\",\n      \"format\": \"HTML\",\n      \"includeRawData\": false,\n      \"includeVisualizations\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Data Management",
+      "item": [
+        {
+          "name": "Delete Analysis Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeleteReport($reportId: ID!) { deleteReport(reportId: $reportId) }\",\n  \"variables\": {\n    \"reportId\": \"{{reportId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete File Upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation DeleteFileUpload($id: ID!) { deleteFileUpload(id: $id) }\",\n  \"variables\": {\n    \"id\": \"{{uploadedFileId}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update File Metadata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation UpdateFileMetadata($id: ID!, $metadata: JSON!) { updateFileMetadata(id: $id, metadata: $metadata) { id metadata } }\",\n  \"variables\": {\n    \"id\": \"{{uploadedFileId}}\",\n    \"metadata\": {\n      \"tags\": [\"updated\", \"revenue\", \"q3\"],\n      \"description\": \"Updated Q3 revenue analysis with corrected data\",\n      \"department\": \"Finance\",\n      \"confidentiality\": \"Internal\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{graphqlEndpoint}}",
+              "host": ["{{graphqlEndpoint}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sample Data Creation",
+      "item": [
+        {
+          "name": "Create Sample CSV Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/create-sample-data",
+              "host": ["{{baseUrl}}"],
+              "path": ["create-sample-data"]
+            },
+            "description": "Generate sample CSV files for testing"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-extract IDs from previous responses",
+          "if (pm.response && pm.response.json()) {",
+          "  const response = pm.response.json();",
+          "  ",
+          "  // Extract file upload ID",
+          "  if (response.data && response.data.uploadAndAnalyzeFile && response.data.uploadAndAnalyzeFile.fileUpload) {",
+          "    pm.collectionVariables.set('uploadedFileId', response.data.uploadAndAnalyzeFile.fileUpload.id);",
+          "  }",
+          "  ",
+          "  // Extract report ID",
+          "  if (response.data && response.data.uploadAndAnalyzeFile) {",
+          "    pm.collectionVariables.set('reportId', response.data.uploadAndAnalyzeFile.id);",
+          "  }",
+          "  ",
+          "  // Extract insight ID",
+          "  if (response.data && response.data.uploadAndAnalyzeFile && response.data.uploadAndAnalyzeFile.insights && response.data.uploadAndAnalyzeFile.insights.length > 0) {",
+          "    pm.collectionVariables.set('insightId', response.data.uploadAndAnalyzeFile.insights[0].id);",
+          "  }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common test assertions",
+          "pm.test('Status code is 200', function () {",
+          "  pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response is JSON', function () {",
+          "  pm.response.to.be.json;",
+          "});",
+          "",
+          "pm.test('No GraphQL errors', function () {",
+          "  const response = pm.response.json();",
+          "  pm.expect(response.errors).to.be.undefined;",
+          "});",
+          "",
+          "// Extract and store IDs for subsequent requests",
+          "const response = pm.response.json();",
+          "if (response.data && response.data.uploadAndAnalyzeFile) {",
+          "  const result = response.data.uploadAndAnalyzeFile;",
+          "  ",
+          "  pm.collectionVariables.set('reportId', result.id);",
+          "  ",
+          "  if (result.fileUpload) {",
+          "    pm.collectionVariables.set('uploadedFileId', result.fileUpload.id);",
+          "  }",
+          "  ",
+          "  if (result.insights && result.insights.length > 0) {",
+          "    pm.collectionVariables.set('insightId', result.insights[0].id);",
+          "  }",
+          "}",
+          "",
+          "// Log important response data",
+          "if (response.data) {",
+          "  console.log('Response data:', JSON.stringify(response.data, null, 2));",
+          "}"
+        ]
+      }
+    }
+  ]
+}

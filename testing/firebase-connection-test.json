@@ -1,0 +1,135 @@
+{
+  "description": "Testes de conexão e consultas Firebase Firestore",
+  "baseURL": "http://localhost:4000/graphql",
+  "scenarios": [
+    {
+      "name": "Teste de Conexão Firebase",
+      "description": "Testa se a conexão com Firebase está funcionando",
+      "query": "mutation TestFirebaseConnection { testConnection(input: { type: FIREBASE, name: \"Firebase Test\", apiUrl: \"your-project-id\", apiKey: \"your-firebase-api-key\" }) { success message latency } }",
+      "expectedFields": ["success", "message"],
+      "notes": [
+        "Substitua 'your-project-id' pelo ID do seu projeto Firebase",
+        "Substitua 'your-firebase-api-key' pela sua chave de API do Firebase",
+        "Para usar sem chave API, remova o campo apiKey (funciona para projetos públicos)"
+      ]
+    },
+    {
+      "name": "Criar Conexão Firebase",
+      "description": "Cria uma nova conexão Firebase para testes",
+      "query": "mutation CreateFirebaseConnection { createDataConnectionPublic(input: { type: FIREBASE, name: \"Firebase Demo\", description: \"Conexão de teste Firebase\", apiUrl: \"demo-project\", apiKey: \"demo-key\" }) { id name type status } }",
+      "expectedFields": ["id", "name", "type", "status"],
+      "saveResponse": "firebaseConnectionId"
+    },
+    {
+      "name": "Listar Conexões",
+      "description": "Lista todas as conexões incluindo Firebase",
+      "query": "query ListConnections { getDataConnectionsPublic { id name type status config { apiUrl } } }",
+      "expectedFields": ["id", "name", "type"]
+    },
+    {
+      "name": "Consulta IA - Usuários Ativos",
+      "description": "Consulta usuários ativos usando linguagem natural",
+      "query": "mutation QueryActiveUsers($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"buscar todos os usuários ativos\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{firebaseConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria gerar algo como:",
+        "{\"collection\": \"users\", \"operation\": \"get\", \"filters\": [{\"field\": \"active\", \"operator\": \"==\", \"value\": true}]}"
+      ]
+    },
+    {
+      "name": "Consulta IA - Produtos por Preço",
+      "description": "Consulta produtos com preço maior que 100",
+      "query": "mutation QueryExpensiveProducts($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"produtos com preço maior que 100 reais\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{firebaseConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria gerar algo como:",
+        "{\"collection\": \"products\", \"operation\": \"get\", \"filters\": [{\"field\": \"price\", \"operator\": \">\", \"value\": 100}]}"
+      ]
+    },
+    {
+      "name": "Consulta IA - Pedidos Recentes",
+      "description": "Consulta pedidos dos últimos 30 dias",
+      "query": "mutation QueryRecentOrders($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"pedidos dos últimos 30 dias ordenados por data\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{firebaseConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria gerar filtros de data e ordenação"
+      ]
+    },
+    {
+      "name": "Histórico de Consultas",
+      "description": "Visualiza o histórico de consultas Firebase",
+      "query": "query GetFirebaseHistory { getAIQueryHistoryPublic(limit: 10) { id naturalQuery generatedQuery status executionTime createdAt connection { name type } } }",
+      "expectedFields": ["naturalQuery", "generatedQuery", "status"]
+    }
+  ],
+  "firebaseSetup": {
+    "description": "Configuração necessária para Firebase",
+    "steps": [
+      "1. Criar projeto no Firebase Console (https://console.firebase.google.com/)",
+      "2. Ativar Firestore Database",
+      "3. Obter Project ID do projeto",
+      "4. (Opcional) Gerar API Key nas configurações do projeto",
+      "5. Configurar regras de segurança para permitir leitura (para testes):"
+    ],
+    "firestoreRules": {
+      "description": "Regras básicas para testes (NÃO usar em produção)",
+      "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read: if true;\n    }\n  }\n}"
+    }
+  },
+  "sampleData": {
+    "description": "Dados de exemplo para criar no Firestore",
+    "collections": {
+      "users": [
+        {
+          "id": "user1",
+          "name": "João Silva",
+          "email": "joao@email.com",
+          "active": true,
+          "createdAt": "2024-01-15T10:30:00Z"
+        },
+        {
+          "id": "user2", 
+          "name": "Maria Santos",
+          "email": "maria@email.com",
+          "active": false,
+          "createdAt": "2024-02-20T14:15:00Z"
+        }
+      ],
+      "products": [
+        {
+          "id": "prod1",
+          "name": "Notebook Dell",
+          "price": 2500,
+          "category": "electronics",
+          "inStock": true
+        },
+        {
+          "id": "prod2",
+          "name": "Mouse USB",
+          "price": 25,
+          "category": "accessories", 
+          "inStock": true
+        }
+      ],
+      "orders": [
+        {
+          "id": "order1",
+          "userId": "user1",
+          "productIds": ["prod1"],
+          "total": 2500,
+          "status": "completed",
+          "createdAt": "2024-03-01T09:00:00Z"
+        }
+      ]
+    }
+  }
+}

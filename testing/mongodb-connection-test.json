@@ -1,0 +1,242 @@
+{
+  "description": "Testes de conexão e consultas MongoDB",
+  "baseURL": "http://localhost:4000/graphql",
+  "scenarios": [
+    {
+      "name": "Teste de Conexão MongoDB Local",
+      "description": "Testa conexão com MongoDB local",
+      "query": "mutation TestMongoConnection { testConnection(input: { type: MONGODB, name: \"MongoDB Local\", host: \"localhost\", port: 27017, database: \"smartbi_test\", username: \"admin\", password: \"password123\" }) { success message latency } }",
+      "expectedFields": ["success", "message"],
+      "notes": [
+        "Ajuste host, port, database, username e password conforme sua configuração",
+        "Para MongoDB sem autenticação, remova username e password"
+      ]
+    },
+    {
+      "name": "Teste de Conexão MongoDB Atlas",
+      "description": "Testa conexão com MongoDB Atlas (cloud)",
+      "query": "mutation TestMongoAtlas { testConnection(input: { type: MONGODB, name: \"MongoDB Atlas\", apiUrl: \"mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority\" }) { success message latency } }",
+      "expectedFields": ["success", "message"],
+      "notes": [
+        "Substitua a connection string pela sua do MongoDB Atlas",
+        "Obtenha a connection string no painel do MongoDB Atlas"
+      ]
+    },
+    {
+      "name": "Criar Conexão MongoDB",
+      "description": "Cria uma nova conexão MongoDB para testes",
+      "query": "mutation CreateMongoConnection { createDataConnectionPublic(input: { type: MONGODB, name: \"MongoDB Demo\", description: \"Conexão de teste MongoDB\", host: \"localhost\", port: 27017, database: \"smartbi_demo\" }) { id name type status } }",
+      "expectedFields": ["id", "name", "type", "status"],
+      "saveResponse": "mongoConnectionId"
+    },
+    {
+      "name": "Listar Conexões",
+      "description": "Lista todas as conexões incluindo MongoDB",
+      "query": "query ListConnections { getDataConnectionsPublic { id name type status config { host port database } } }",
+      "expectedFields": ["id", "name", "type"]
+    },
+    {
+      "name": "Consulta IA - Usuários Ativos",
+      "description": "Consulta usuários ativos usando linguagem natural",
+      "query": "mutation QueryActiveUsers($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"buscar todos os usuários ativos\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{mongoConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria gerar algo como:",
+        "{\"collection\": \"users\", \"operation\": \"find\", \"filter\": {\"active\": true}}"
+      ]
+    },
+    {
+      "name": "Consulta IA - Produtos por Preço",
+      "description": "Consulta produtos com preço maior que 100",
+      "query": "mutation QueryExpensiveProducts($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"produtos com preço maior que 100 reais\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{mongoConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria gerar algo como:",
+        "{\"collection\": \"products\", \"operation\": \"find\", \"filter\": {\"price\": {\"$gt\": 100}}}"
+      ]
+    },
+    {
+      "name": "Consulta IA - Agregação por Categoria",
+      "description": "Conta produtos por categoria usando agregação",
+      "query": "mutation QueryProductsByCategory($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"contar quantos produtos existem por categoria\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{mongoConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria gerar agregação MongoDB:",
+        "{\"collection\": \"products\", \"operation\": \"aggregate\", \"pipeline\": [{\"$group\": {\"_id\": \"$category\", \"count\": {\"$sum\": 1}}}]}"
+      ]
+    },
+    {
+      "name": "Consulta IA - Busca por Texto",
+      "description": "Busca usuários por nome usando regex",
+      "query": "mutation SearchUsersByName($connectionId: String!) { executeAIQueryPublic(input: { connectionId: $connectionId, naturalQuery: \"buscar usuários que tenham 'Silva' no nome\" }) { id naturalQuery generatedQuery results { data } executionTime status } }",
+      "variables": {
+        "connectionId": "{{mongoConnectionId}}"
+      },
+      "expectedFields": ["naturalQuery", "generatedQuery", "results"],
+      "notes": [
+        "Esta consulta deveria usar regex:",
+        "{\"collection\": \"users\", \"operation\": \"find\", \"filter\": {\"name\": {\"$regex\": \"Silva\", \"$options\": \"i\"}}}"
+      ]
+    },
+    {
+      "name": "Histórico de Consultas",
+      "description": "Visualiza o histórico de consultas MongoDB",
+      "query": "query GetMongoHistory { getAIQueryHistoryPublic(limit: 10) { id naturalQuery generatedQuery status executionTime createdAt connection { name type } } }",
+      "expectedFields": ["naturalQuery", "generatedQuery", "status"]
+    }
+  ],
+  "mongoSetup": {
+    "description": "Configuração necessária para MongoDB",
+    "localSetup": {
+      "description": "Instalação local do MongoDB",
+      "steps": [
+        "1. Baixar MongoDB Community Server",
+        "2. Instalar e iniciar o serviço MongoDB",
+        "3. (Opcional) Instalar MongoDB Compass para interface visual",
+        "4. Criar database 'smartbi_demo'",
+        "5. Inserir dados de exemplo nas collections"
+      ]
+    },
+    "atlasSetup": {
+      "description": "Configuração do MongoDB Atlas (cloud)",
+      "steps": [
+        "1. Criar conta no MongoDB Atlas (https://www.mongodb.com/cloud/atlas)",
+        "2. Criar um cluster gratuito",
+        "3. Configurar usuário e senha",
+        "4. Adicionar IP à whitelist (0.0.0.0/0 para todos os IPs em testes)",
+        "5. Obter connection string",
+        "6. Criar database e collections"
+      ]
+    }
+  },
+  "sampleData": {
+    "description": "Dados de exemplo para inserir no MongoDB",
+    "collections": {
+      "users": [
+        {
+          "_id": "507f1f77bcf86cd799439011",
+          "name": "João Silva",
+          "email": "joao@email.com",
+          "active": true,
+          "age": 30,
+          "createdAt": "2024-01-15T10:30:00Z",
+          "profile": {
+            "department": "TI",
+            "role": "Developer"
+          }
+        },
+        {
+          "_id": "507f1f77bcf86cd799439012",
+          "name": "Maria Santos Silva",
+          "email": "maria@email.com",
+          "active": false,
+          "age": 25,
+          "createdAt": "2024-02-20T14:15:00Z",
+          "profile": {
+            "department": "Marketing",
+            "role": "Analyst"
+          }
+        },
+        {
+          "_id": "507f1f77bcf86cd799439013",
+          "name": "Pedro Silva",
+          "email": "pedro@email.com",
+          "active": true,
+          "age": 35,
+          "createdAt": "2024-03-10T08:45:00Z",
+          "profile": {
+            "department": "Sales",
+            "role": "Manager"
+          }
+        }
+      ],
+      "products": [
+        {
+          "_id": "507f1f77bcf86cd799439021",
+          "name": "Notebook Dell Inspiron",
+          "price": 2500,
+          "category": "electronics",
+          "inStock": true,
+          "tags": ["computer", "laptop", "dell"],
+          "specs": {
+            "cpu": "Intel i5",
+            "ram": "8GB",
+            "storage": "256GB SSD"
+          }
+        },
+        {
+          "_id": "507f1f77bcf86cd799439022",
+          "name": "Mouse Logitech",
+          "price": 25,
+          "category": "accessories",
+          "inStock": true,
+          "tags": ["mouse", "usb", "logitech"]
+        },
+        {
+          "_id": "507f1f77bcf86cd799439023",
+          "name": "Smartphone Samsung",
+          "price": 800,
+          "category": "electronics",
+          "inStock": false,
+          "tags": ["phone", "mobile", "samsung"]
+        },
+        {
+          "_id": "507f1f77bcf86cd799439024",
+          "name": "Teclado Mecânico",
+          "price": 150,
+          "category": "accessories",
+          "inStock": true,
+          "tags": ["keyboard", "mechanical", "gaming"]
+        }
+      ],
+      "orders": [
+        {
+          "_id": "507f1f77bcf86cd799439031",
+          "userId": "507f1f77bcf86cd799439011",
+          "productIds": ["507f1f77bcf86cd799439021"],
+          "total": 2500,
+          "status": "completed",
+          "createdAt": "2024-03-01T09:00:00Z",
+          "shipping": {
+            "address": "Rua das Flores, 123",
+            "city": "São Paulo",
+            "state": "SP"
+          }
+        },
+        {
+          "_id": "507f1f77bcf86cd799439032",
+          "userId": "507f1f77bcf86cd799439013",
+          "productIds": ["507f1f77bcf86cd799439022", "507f1f77bcf86cd799439024"],
+          "total": 175,
+          "status": "pending",
+          "createdAt": "2024-03-15T14:30:00Z",
+          "shipping": {
+            "address": "Av. Paulista, 456",
+            "city": "São Paulo",
+            "state": "SP"
+          }
+        }
+      ]
+    }
+  },
+  "mongoCommands": {
+    "description": "Comandos MongoDB úteis para inserir dados de teste",
+    "insertUsers": "db.users.insertMany([/* copiar dados do array users acima */])",
+    "insertProducts": "db.products.insertMany([/* copiar dados do array products acima */])",
+    "insertOrders": "db.orders.insertMany([/* copiar dados do array orders acima */])",
+    "listCollections": "show collections",
+    "countDocuments": "db.users.countDocuments()",
+    "findActive": "db.users.find({active: true})",
+    "findExpensive": "db.products.find({price: {$gt: 100}})",
+    "aggregateByCategory": "db.products.aggregate([{$group: {_id: '$category', count: {$sum: 1}}}])"
+  }
+}

@@ -440,6 +440,7 @@ Respond with ONLY the JSON object:
         return 'MySQL';
       case ConnectionType.POSTGRESQL:
       case ConnectionType.SUPABASE:
+      case ConnectionType.FIREBASE:
         return 'PostgreSQL';
       default:
         return 'SQL';

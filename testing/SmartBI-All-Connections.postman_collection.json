@@ -1,0 +1,320 @@
+{
+  "info": {
+    "name": "SmartBI - Todas as Conexões",
+    "description": "Collection completa para testar todos os tipos de conexão suportados pelo SmartBI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "📊 Bancos Relacionais",
+      "item": [
+        {
+          "name": "MySQL Local",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateMySQLConnection { createDataConnectionPublic(input: { type: MYSQL, name: \\\"MySQL Local\\\", description: \\\"Banco MySQL local\\\", config: { host: \\\"localhost\\\", port: 3306, database: \\\"test\\\", username: \\\"root\\\", password: \\\"password\\\" } }) { id name type status description config { host port database } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "PostgreSQL Local",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreatePostgreSQLConnection { createDataConnectionPublic(input: { type: POSTGRESQL, name: \\\"PostgreSQL Local\\\", description: \\\"Banco PostgreSQL local\\\", config: { host: \\\"localhost\\\", port: 5432, database: \\\"postgres\\\", username: \\\"postgres\\\", password: \\\"postgres\\\" } }) { id name type status description config { host port database } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Supabase",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateSupabaseConnection { createDataConnectionPublic(input: { type: SUPABASE, name: \\\"Supabase Production\\\", description: \\\"Banco Supabase principal\\\", config: { apiUrl: \\\"https://xxxxxxxxxxx.supabase.co\\\", apiKey: \\\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\\\" } }) { id name type status description config { apiUrl } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔥 NoSQL",
+      "item": [
+        {
+          "name": "Firebase Firestore",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateFirebaseConnection { createDataConnectionPublic(input: { type: FIREBASE, name: \\\"Firebase Analytics\\\", description: \\\"Dados Firebase\\\", config: { apiUrl: \\\"meu-projeto-firebase\\\", apiKey: \\\"AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\\" } }) { id name type status description config { apiUrl } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "MongoDB Local",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateMongoDBConnection { createDataConnectionPublic(input: { type: MONGODB, name: \\\"MongoDB Local\\\", description: \\\"Banco MongoDB local\\\", config: { connectionString: \\\"mongodb://localhost:27017/minha_empresa\\\" } }) { id name type status description config { connectionString } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "MongoDB Atlas",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateMongoDBAtlas { createDataConnectionPublic(input: { type: MONGODB, name: \\\"MongoDB Atlas\\\", description: \\\"Banco MongoDB Cloud\\\", config: { connectionString: \\\"mongodb+srv://usuario:senha@cluster0.xxxxx.mongodb.net/banco_producao?retryWrites=true&w=majority\\\" } }) { id name type status description config { connectionString } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "🌐 APIs",
+      "item": [
+        {
+          "name": "API REST - JSONPlaceholder",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateAPIREST { createDataConnectionPublic(input: { type: API_REST, name: \\\"JSONPlaceholder API\\\", description: \\\"API de testes pública\\\", config: { apiUrl: \\\"https://jsonplaceholder.typicode.com\\\" } }) { id name type status description config { apiUrl } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "API REST com Autenticação",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateAPIWithAuth { createDataConnectionPublic(input: { type: API_REST, name: \\\"API com Auth\\\", description: \\\"API com autenticação\\\", config: { apiUrl: \\\"https://api.empresa.com/v1\\\", apiKey: \\\"Bearer sua-api-key-aqui\\\", headers: [{\\\"key\\\": \\\"Authorization\\\", \\\"value\\\": \\\"Bearer token123\\\"}, {\\\"key\\\": \\\"Content-Type\\\", \\\"value\\\": \\\"application/json\\\"}] } }) { id name type status description createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "API GraphQL",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateGraphQLAPI { createDataConnectionPublic(input: { type: API_GRAPHQL, name: \\\"GraphQL API\\\", description: \\\"API GraphQL da empresa\\\", config: { apiUrl: \\\"https://api.empresa.com/graphql\\\", headers: [{\\\"key\\\": \\\"Authorization\\\", \\\"value\\\": \\\"Bearer token123\\\"}] } }) { id name type status description config { apiUrl } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚀 Especializados",
+      "item": [
+        {
+          "name": "Redis Local",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateRedisConnection { createDataConnectionPublic(input: { type: REDIS, name: \\\"Redis Cache\\\", description: \\\"Cache Redis local\\\", config: { host: \\\"localhost\\\", port: 6379 } }) { id name type status description config { host port } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Elasticsearch Local",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateElasticsearchConnection { createDataConnectionPublic(input: { type: ELASTICSEARCH, name: \\\"Elasticsearch Logs\\\", description: \\\"Índices de logs\\\", config: { apiUrl: \\\"http://localhost:9200\\\" } }) { id name type status description config { apiUrl } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Cassandra Local",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateCassandraConnection { createDataConnectionPublic(input: { type: CASSANDRA, name: \\\"Cassandra Analytics\\\", description: \\\"Base de dados Cassandra\\\", config: { host: \\\"localhost\\\", port: 9042, database: \\\"analytics_keyspace\\\" } }) { id name type status description config { host port database } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "DynamoDB AWS",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation CreateDynamoDBConnection { createDataConnectionPublic(input: { type: DYNAMODB, name: \\\"DynamoDB Production\\\", description: \\\"Tabelas DynamoDB AWS\\\", config: { apiUrl: \\\"https://dynamodb.us-east-1.amazonaws.com\\\", apiKey: \\\"AKIA...\\\", headers: [{\\\"key\\\": \\\"AWS-Region\\\", \\\"value\\\": \\\"us-east-1\\\"}] } }) { id name type status description createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔍 Utilitários",
+      "item": [
+        {
+          "name": "Listar Todas as Conexões",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"query ListAllConnections { getDataConnectionsPublic { id name type status description config { host port database apiUrl connectionString } createdAt } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Testar Conexão",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation TestConnection { testConnection(input: { type: FIREBASE, name: \\\"Teste Firebase\\\", config: { apiUrl: \\\"projeto-teste\\\", apiKey: \\\"AIzaSy...\\\" } }) { success message latency } }\"\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 Consultas IA",
+      "item": [
+        {
+          "name": "Query Natural - SQL",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExecuteNaturalQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"CONNECTION_ID_AQUI\",\n      \"naturalQuery\": \"mostrar todos os usuários\"\n    }\n  }\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Query Natural - Firebase",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExecuteFirebaseQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"FIREBASE_CONNECTION_ID\",\n      \"naturalQuery\": \"buscar 5 documentos da collection produtos\"\n    }\n  }\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Query Natural - MongoDB",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExecuteMongoQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"MONGODB_CONNECTION_ID\",\n      \"naturalQuery\": \"contar documentos na collection pedidos\"\n    }\n  }\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        },
+        {
+          "name": "Query Natural - API",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation ExecuteAPIQuery($input: AIQueryInput!) { executeAIQueryPublic(input: $input) { id naturalQuery generatedQuery results { data } executionTime status error createdAt } }\",\n  \"variables\": {\n    \"input\": {\n      \"connectionId\": \"API_CONNECTION_ID\",\n      \"naturalQuery\": \"listar todos os posts\"\n    }\n  }\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/graphql"}
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Configuração automática da baseUrl",
+          "if (!pm.environment.get('baseUrl')) {",
+          "    pm.environment.set('baseUrl', 'http://localhost:4000');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Verificações automáticas para todas as requisições",
+          "pm.test('Status code é 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Resposta tem dados ou errors', function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.satisfy(function(response) {",
+          "        return response.data || response.errors;",
+          "    });",
+          "});",
+          "",
+          "// Se é uma mutation de criação, salvar o ID",
+          "if (pm.request.body && pm.request.body.raw) {",
+          "    const requestBody = JSON.parse(pm.request.body.raw);",
+          "    if (requestBody.query && requestBody.query.includes('createDataConnectionPublic')) {",
+          "        const jsonData = pm.response.json();",
+          "        if (jsonData.data && jsonData.data.createDataConnectionPublic) {",
+          "            const connection = jsonData.data.createDataConnectionPublic;",
+          "            pm.environment.set('last_connection_id', connection.id);",
+          "            console.log('Connection ID salvo: ' + connection.id);",
+          "        }",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

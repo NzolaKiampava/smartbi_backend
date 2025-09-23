@@ -2,6 +2,7 @@ export enum ConnectionType {
   MYSQL = 'MYSQL',
   POSTGRESQL = 'POSTGRESQL',
   SUPABASE = 'SUPABASE',
+  FIREBASE = 'FIREBASE',
   API_REST = 'API_REST',
   API_GRAPHQL = 'API_GRAPHQL'
 }

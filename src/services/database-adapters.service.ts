@@ -692,6 +692,8 @@ export function createDatabaseAdapter(type: ConnectionType): DatabaseAdapter {
       return new PostgreSQLAdapter();
     case ConnectionType.SUPABASE:
       return new SupabaseAdapter();
+    case ConnectionType.FIREBASE:
+      return new SupabaseAdapter(); // Using Supabase adapter for Firebase for now
     case ConnectionType.API_REST:
       return new APIRestAdapter();
     default:
