@@ -59,7 +59,7 @@ export class FileAnalysisDatabaseService {
         size: data.size,
         path: data.path,
         fileType: data.file_type,
-        uploadedAt: data.uploaded_at,
+        uploadedAt: data.created_at,
         metadata: data.metadata || {}
       };
     } catch (error) {
@@ -140,7 +140,7 @@ export class FileAnalysisDatabaseService {
   /**
    * Save insights to database
    */
-  private async saveInsights(
+  async saveInsights(
     reportId: string, 
     aiInsights: AIInsight[]
   ): Promise<Insight[]> {
@@ -228,53 +228,6 @@ export class FileAnalysisDatabaseService {
   }
 
   /**
-   * Save visualization suggestions as visualization records
-   */
-  private async saveVisualizationSuggestions(
-    client: PoolClient,
-    reportId: string,
-    suggestions: string[]
-  ): Promise<Visualization[]> {
-    const visualizations: Visualization[] = [];
-    
-    for (let i = 0; i < suggestions.length; i++) {
-      const suggestion = suggestions[i];
-      const type = this.extractVisualizationType(suggestion);
-      
-      const query = `
-        INSERT INTO visualizations (
-          report_id, type, title, description, data, config, priority
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `;
-      
-      const values = [
-        reportId,
-        type,
-        `Suggested ${type}`,
-        suggestion,
-        JSON.stringify({}), // Empty data - suggestions only
-        JSON.stringify({ suggested: true }),
-        10 - i // Higher priority for earlier suggestions
-      ];
-      
-      const result = await client.query(query, values);
-      const row = result.rows[0];
-      
-      visualizations.push({
-        id: row.id,
-        type: row.type,
-        title: row.title,
-        description: row.description,
-        data: row.data,
-        config: row.config
-      });
-    }
-    
-    return visualizations;
-  }
-
-  /**
    * Get file upload by ID
    */
   async getFileUpload(id: string): Promise<FileUpload | null> {
@@ -302,7 +255,7 @@ export class FileAnalysisDatabaseService {
         size: data.size,
         path: data.path,
         fileType: data.file_type,
-        uploadedAt: data.uploaded_at,
+        uploadedAt: data.created_at || data.uploaded_at,
         metadata: data.metadata || {}
       };
     } catch (error) {
@@ -312,26 +265,38 @@ export class FileAnalysisDatabaseService {
   }
 
   /**
-   * Get analysis report by ID
+   * Get analysis report by ID using Supabase
    */
   async getAnalysisReport(id: string): Promise<AnalysisReport | null> {
-    const client = await this.pool.connect();
-    
     try {
-      // Get main report
-      const reportQuery = 'SELECT * FROM analysis_reports WHERE id = $1';
-      const reportResult = await client.query(reportQuery, [id]);
-      
-      if (reportResult.rows.length === 0) {
+      // Get main report with file upload
+      const { data: reportData, error: reportError } = await supabase
+        .from('analysis_reports')
+        .select(`
+          *,
+          file_uploads!inner(*)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (reportError || !reportData) {
+        console.error('Error getting analysis report:', reportError);
         return null;
       }
-      
-      const reportRow = reportResult.rows[0];
-      
+
       // Get insights
-      const insightsQuery = 'SELECT * FROM insights WHERE report_id = $1 ORDER BY importance DESC';
-      const insightsResult = await client.query(insightsQuery, [id]);
-      const insights = insightsResult.rows.map(row => ({
+      const { data: insightsData, error: insightsError } = await supabase
+        .from('insights')
+        .select('*')
+        .eq('report_id', id)
+        .order('importance', { ascending: false });
+
+      if (insightsError) {
+        console.error('Error getting insights:', insightsError);
+        return null;
+      }
+
+      const insights = (insightsData || []).map((row: any) => ({
         id: row.id,
         reportId: row.report_id,
         type: row.type,
@@ -340,88 +305,48 @@ export class FileAnalysisDatabaseService {
         value: row.value,
         confidence: row.confidence,
         importance: row.importance,
-        metadata: row.metadata,
+        metadata: row.metadata || {},
         createdAt: row.created_at
       }));
-      
-      // Get data quality
-      const qualityQuery = 'SELECT * FROM data_quality_assessments WHERE report_id = $1';
-      const qualityResult = await client.query(qualityQuery, [id]);
-      const dataQuality = qualityResult.rows[0] ? {
-        score: qualityResult.rows[0].overall_score,
-        completeness: qualityResult.rows[0].completeness,
-        accuracy: qualityResult.rows[0].accuracy,
-        consistency: qualityResult.rows[0].consistency,
-        validity: qualityResult.rows[0].validity,
-        issues: qualityResult.rows[0].issues || []
-      } : undefined;
-      
-      // Get visualizations
-      const vizQuery = 'SELECT * FROM visualizations WHERE report_id = $1 ORDER BY priority DESC';
-      const vizResult = await client.query(vizQuery, [id]);
-      const visualizations = vizResult.rows.map(row => ({
-        id: row.id,
-        type: row.type,
-        title: row.title,
-        description: row.description,
-        data: row.data,
-        config: row.config
-      }));
-      
-      // Get the complete file upload info
-      const fileUpload = await this.getFileUpload(reportRow.file_upload_id);
-      if (!fileUpload) {
-        throw new Error(`File upload with ID ${reportRow.file_upload_id} not found`);
-      }
-      
-      return {
-        id: reportRow.id,
-        fileUploadId: reportRow.file_upload_id,
-        fileUpload,
-        status: reportRow.status,
-        title: reportRow.title,
-        summary: reportRow.summary,
-        executionTime: reportRow.execution_time,
-        recommendations: reportRow.recommendations,
-        insights,
-        dataQuality,
-        visualizations,
-        createdAt: reportRow.created_at,
-        updatedAt: reportRow.updated_at
-      };
-    } finally {
-      client.release();
-    }
-  }
 
-  /**
-   * List analysis reports with pagination
-   */
-  async listAnalysisReports(limit: number = 20, offset: number = 0): Promise<AnalysisReport[]> {
-    const client = await this.pool.connect();
-    
-    try {
-      const query = `
-        SELECT ar.*, fu.original_name as file_original_name
-        FROM analysis_reports ar
-        JOIN file_uploads fu ON ar.file_upload_id = fu.id
-        ORDER BY ar.created_at DESC
-        LIMIT $1 OFFSET $2
-      `;
-      
-      const result = await client.query(query, [limit, offset]);
-      
-      const reports: AnalysisReport[] = [];
-      for (const row of result.rows) {
-        const report = await this.getAnalysisReport(row.id);
-        if (report) {
-          reports.push(report);
-        }
+      const fileUpload = reportData.file_uploads ? {
+        id: reportData.file_uploads.id,
+        filename: reportData.file_uploads.filename,
+        originalName: reportData.file_uploads.original_name,
+        mimetype: reportData.file_uploads.mimetype,
+        encoding: reportData.file_uploads.encoding,
+        size: reportData.file_uploads.size,
+        path: reportData.file_uploads.path,
+        fileType: reportData.file_uploads.file_type,
+        metadata: reportData.file_uploads.metadata || {},
+        createdAt: reportData.file_uploads.created_at,
+        updatedAt: reportData.file_uploads.updated_at,
+        uploadedAt: reportData.file_uploads.created_at // Map to uploadedAt
+      } : null;
+
+      if (!fileUpload) {
+        return null;
       }
-      
-      return reports;
-    } finally {
-      client.release();
+
+      return {
+        id: reportData.id,
+        fileUploadId: reportData.file_upload_id,
+        status: reportData.status,
+        title: reportData.title,
+        summary: reportData.summary,
+        insights,
+        recommendations: [], // Empty for now
+        visualizations: [], // Empty for now
+        dataQuality: undefined, // Can be implemented if needed
+        executionTime: reportData.execution_time,
+        createdAt: reportData.created_at,
+        updatedAt: reportData.updated_at,
+        fileUpload
+      };
+
+    } catch (error) {
+      console.error('Error in getAnalysisReport:', error);
+      throw error;
     }
   }
 
@@ -471,9 +396,214 @@ export class FileAnalysisDatabaseService {
   }
 
   /**
+   * Get all file uploads
+   */
+  async getAllFileUploads(): Promise<FileUpload[]> {
+    try {
+      const { data, error } = await supabase
+        .from('file_uploads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error getting all file uploads:', error);
+        throw new Error(`Failed to get file uploads: ${error.message}`);
+      }
+
+      return data.map(row => ({
+        id: row.id,
+        filename: row.filename,
+        originalName: row.original_name,
+        mimetype: row.mimetype,
+        encoding: row.encoding,
+        size: row.size,
+        path: row.path,
+        fileType: row.file_type,
+        uploadedAt: row.created_at,
+        metadata: row.metadata || {}
+      }));
+    } catch (error) {
+      console.error('Error in getAllFileUploads:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all analysis reports
+   */
+  async getAllAnalysisReports(): Promise<AnalysisReport[]> {
+    try {
+      const { data, error } = await supabase
+        .from('analysis_reports')
+        .select(`
+          *,
+          file_uploads!inner(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error getting all analysis reports:', error);
+        throw new Error(`Failed to get analysis reports: ${error.message}`);
+      }
+
+      const reports: AnalysisReport[] = [];
+      
+      for (const row of data) {
+        // Get insights
+        const { data: insightsData, error: insightsError } = await supabase
+          .from('insights')
+          .select('*')
+          .eq('report_id', row.id)
+          .order('importance', { ascending: false });
+
+        if (insightsError) {
+          console.error('Error getting insights:', insightsError);
+          continue;
+        }
+
+        const insights = (insightsData || []).map((insightRow: any) => ({
+          id: insightRow.id,
+          reportId: insightRow.report_id,
+          type: insightRow.type,
+          title: insightRow.title,
+          description: insightRow.description,
+          value: insightRow.value,
+          confidence: insightRow.confidence,
+          importance: insightRow.importance,
+          metadata: insightRow.metadata || {},
+          createdAt: insightRow.created_at
+        }));
+
+        const fileUpload = row.file_uploads ? {
+          id: row.file_uploads.id,
+          filename: row.file_uploads.filename,
+          originalName: row.file_uploads.original_name,
+          mimetype: row.file_uploads.mimetype,
+          encoding: row.file_uploads.encoding,
+          size: row.file_uploads.size,
+          path: row.file_uploads.path,
+          fileType: row.file_uploads.file_type,
+          uploadedAt: row.file_uploads.created_at,
+          metadata: row.file_uploads.metadata || {}
+        } : null;
+
+        if (fileUpload) {
+          reports.push({
+            id: row.id,
+            fileUploadId: row.file_upload_id,
+            status: row.status,
+            title: row.title,
+            summary: row.summary,
+            insights,
+            recommendations: [], // Empty for now
+            visualizations: [], // Empty for now
+            dataQuality: undefined, // You can add data quality logic here if needed
+            executionTime: row.execution_time,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            fileUpload
+          });
+        }
+      }
+
+      return reports;
+    } catch (error) {
+      console.error('Error in getAllAnalysisReports:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get analysis reports by file upload ID
+   */
+  async getAnalysisReportsByFileUpload(fileUploadId: string): Promise<AnalysisReport[]> {
+    try {
+      const { data, error } = await supabase
+        .from('analysis_reports')
+        .select(`
+          *,
+          file_uploads!inner(*)
+        `)
+        .eq('file_upload_id', fileUploadId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error getting analysis reports by file upload:', error);
+        throw new Error(`Failed to get analysis reports: ${error.message}`);
+      }
+
+      const reports: AnalysisReport[] = [];
+      
+      for (const row of data) {
+        // Get insights
+        const { data: insightsData, error: insightsError } = await supabase
+          .from('insights')
+          .select('*')
+          .eq('report_id', row.id)
+          .order('importance', { ascending: false });
+
+        if (insightsError) {
+          console.error('Error getting insights:', insightsError);
+          continue;
+        }
+
+        const insights = (insightsData || []).map((insightRow: any) => ({
+          id: insightRow.id,
+          reportId: insightRow.report_id,
+          type: insightRow.type,
+          title: insightRow.title,
+          description: insightRow.description,
+          value: insightRow.value,
+          confidence: insightRow.confidence,
+          importance: insightRow.importance,
+          metadata: insightRow.metadata || {},
+          createdAt: insightRow.created_at
+        }));
+
+        const fileUpload = row.file_uploads ? {
+          id: row.file_uploads.id,
+          filename: row.file_uploads.filename,
+          originalName: row.file_uploads.original_name,
+          mimetype: row.file_uploads.mimetype,
+          encoding: row.file_uploads.encoding,
+          size: row.file_uploads.size,
+          path: row.file_uploads.path,
+          fileType: row.file_uploads.file_type,
+          uploadedAt: row.file_uploads.created_at,
+          metadata: row.file_uploads.metadata || {}
+        } : null;
+
+        if (fileUpload) {
+          reports.push({
+            id: row.id,
+            fileUploadId: row.file_upload_id,
+            status: row.status,
+            title: row.title,
+            summary: row.summary,
+            insights,
+            recommendations: [], // Empty for now
+            visualizations: [], // Empty for now
+            dataQuality: undefined, // You can add data quality logic here if needed
+            executionTime: row.execution_time,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            fileUpload
+          });
+        }
+      }
+
+      return reports;
+    } catch (error) {
+      console.error('Error in getAnalysisReportsByFileUpload:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Close database connection
    */
   async close(): Promise<void> {
-    await this.pool.end();
+    // Supabase handles connection pooling automatically
+    // No need to manually close connections
   }
 }

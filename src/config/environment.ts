@@ -12,6 +12,9 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string(),
   SUPABASE_SERVICE_ROLE_KEY: z.string(),
   
+  // Google Gemini AI
+  GOOGLE_GEMINI_API_KEY: z.string().optional(),
+  
   // JWT
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().default('7d'),
@@ -44,6 +47,10 @@ export const config = {
     url: env.data.SUPABASE_URL,
     anonKey: env.data.SUPABASE_ANON_KEY,
     serviceRoleKey: env.data.SUPABASE_SERVICE_ROLE_KEY,
+  },
+  
+  ai: {
+    geminiApiKey: env.data.GOOGLE_GEMINI_API_KEY,
   },
   
   jwt: {
