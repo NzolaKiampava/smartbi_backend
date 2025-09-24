@@ -14,6 +14,12 @@ const envSchema = z.object({
   
   // Google Gemini AI
   GOOGLE_GEMINI_API_KEY: z.string().optional(),
+
+  // Google Document AI (optional)
+  GCP_PROJECT_ID: z.string().optional(),
+  DOCUMENT_AI_LOCATION: z.string().optional(), // e.g., us, eu, asia
+  DOCUMENT_AI_PROCESSOR_ID: z.string().optional(),
+  DOCUMENT_AI_KEYFILE: z.string().optional(),
   
   // JWT
   JWT_SECRET: z.string().min(32),
@@ -51,6 +57,13 @@ export const config = {
   
   ai: {
     geminiApiKey: env.data.GOOGLE_GEMINI_API_KEY,
+  },
+
+  docai: {
+    projectId: env.data.GCP_PROJECT_ID,
+    location: env.data.DOCUMENT_AI_LOCATION,
+    processorId: env.data.DOCUMENT_AI_PROCESSOR_ID,
+    keyFile: env.data.DOCUMENT_AI_KEYFILE,
   },
   
   jwt: {

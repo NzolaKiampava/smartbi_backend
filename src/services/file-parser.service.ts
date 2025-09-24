@@ -135,25 +135,46 @@ export class FileParserService {
    * Parse PDF files
    */
   private async parsePDF(filePath: string): Promise<ParsedData> {
-    const dataBuffer = fs.readFileSync(filePath);
-    const pdfData = await pdfParse(dataBuffer);
+    // Try Google Document AI OCR if available, else fallback to pdf-parse
+    let text = '';
+    let pages: number | undefined = undefined;
+    try {
+      const { DocumentAIService } = await import('./document-ai.service');
+      const docService = new DocumentAIService();
+      if (docService.isAvailable()) {
+        const result = await docService.ocr(filePath, 'application/pdf');
+        if (result.text) {
+          text = result.text;
+          pages = result.pages;
+        }
+      }
+    } catch (e) {
+      // Ignore OCR errors and fallback
+    }
+
+    if (!text) {
+      const dataBuffer = fs.readFileSync(filePath);
+      const pdfData = await pdfParse(dataBuffer);
+      text = pdfData.text;
+      pages = pdfData.numpages;
+    }
     const fileStats = fs.statSync(filePath);
     
     // Split text into lines for basic row structure
-    const lines = pdfData.text.split('\n').filter(line => line.trim());
+    const lines = text.split('\n').filter(line => line.trim());
     const rows = lines.map(line => [line.trim()]);
 
     return {
       headers: ['Content'],
       rows,
-      content: pdfData.text,
+      content: text,
       metadata: {
         fileSize: fileStats.size,
         rowCount: lines.length,
         columnCount: 1,
         dataTypes: { Content: 'text' },
         structure: 'document',
-        summary: `PDF document with ${pdfData.numpages} pages and ${lines.length} lines of text`
+        summary: `PDF document with ${pages ?? 'unknown'} pages and ${lines.length} lines of text`
       }
     };
   }
@@ -341,11 +362,43 @@ export class FileParserService {
    * Parse other/unknown file types
    */
   private async parseOther(filePath: string): Promise<ParsedData> {
+    // If it's an image, try OCR via Document AI
+    const ext = path.extname(filePath).toLowerCase();
+    const isImage = ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.gif', '.webp'].includes(ext);
+    const fileStats = fs.statSync(filePath);
+
+    if (isImage) {
+      try {
+        const { DocumentAIService } = await import('./document-ai.service');
+        const docService = new DocumentAIService();
+        if (docService.isAvailable()) {
+          const result = await docService.ocr(filePath);
+          const text = result.text || '';
+          const lines = text.split('\n').filter(l => l.trim());
+          const rows = lines.map(l => [l.trim()]);
+          return {
+            headers: ['Content'],
+            rows,
+            content: text,
+            metadata: {
+              fileSize: fileStats.size,
+              rowCount: lines.length,
+              columnCount: 1,
+              dataTypes: { Content: 'text' },
+              structure: 'image_document',
+              summary: `Image document OCR extracted ${lines.length} lines of text`
+            }
+          };
+        }
+      } catch (e) {
+        // fall through to generic handling
+      }
+    }
+
+    // Generic text attempt (may fail for binary files)
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split('\n').slice(0, 100); // Limit to first 100 lines
-    const fileStats = fs.statSync(filePath);
     const rows = lines.map(line => [line]);
-    
     return {
       headers: ['Content'],
       rows,

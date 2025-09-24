@@ -53,7 +53,7 @@ export class GeminiAIService {
         metadata: {
           fileType: fileUpload.fileType,
           processingTime: new Date().toISOString(),
-          model: 'gemini-pro',
+          model: 'gemini-1.5-flash',
           confidence: this.calculateOverallConfidence(insights)
         }
       };
