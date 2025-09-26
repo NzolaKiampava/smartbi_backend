@@ -50,7 +50,7 @@ export class AIQueryService {
 
   constructor(geminiConfig: GeminiConfig) {
     this.geminiConfig = {
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       maxTokens: 2048,
       temperature: 0.1,
       maxRetries: 3,

@@ -7,7 +7,8 @@
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "migrate:extracted-text": "ts-node -r tsconfig-paths/register src/scripts/migrate-add-extracted-text.ts"
   },
   "keywords": [
     "business-intelligence",

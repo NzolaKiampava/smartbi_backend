@@ -144,7 +144,15 @@ export class FileParserService {
       if (docService.isAvailable()) {
         const result = await docService.ocr(filePath, 'application/pdf');
         if (result.text) {
-          text = result.text;
+          let augmented = result.text;
+          if (Array.isArray(result.entities) && result.entities.length) {
+            const preview = result.entities
+              .slice(0, 10)
+              .map(e => `${e.type || 'ENTITY'}:${(e.mentionText || '').toString().slice(0, 50)}`)
+              .join('; ');
+            augmented += `\n\n[OCR Entities]: ${preview}`;
+          }
+          text = augmented;
           pages = result.pages;
         }
       }
@@ -373,7 +381,14 @@ export class FileParserService {
         const docService = new DocumentAIService();
         if (docService.isAvailable()) {
           const result = await docService.ocr(filePath);
-          const text = result.text || '';
+          let text = result.text || '';
+          if (Array.isArray(result.entities) && result.entities.length) {
+            const preview = result.entities
+              .slice(0, 10)
+              .map(e => `${e.type || 'ENTITY'}:${(e.mentionText || '').toString().slice(0, 50)}`)
+              .join('; ');
+            text += `\n\n[OCR Entities]: ${preview}`;
+          }
           const lines = text.split('\n').filter(l => l.trim());
           const rows = lines.map(l => [l.trim()]);
           return {

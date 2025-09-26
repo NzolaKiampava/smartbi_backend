@@ -62,6 +62,7 @@ export interface AnalysisReport {
   recommendations: string[];
   dataQuality?: DataQuality;
   visualizations: Visualization[];
+  extractedText?: string; // OCR/parsed content
   rawAnalysis?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
@@ -202,6 +203,7 @@ export interface AIAnalysisResponse {
   tables?: AITableAnalysis[];
   revenue?: AIRevenueAnalysis;
   visualizations?: AIVisualizationSuggestion[];
+  extractedText?: string; // OCR/parsed content
   metadata: Record<string, any>;
 }
 

@@ -69,6 +69,7 @@ export const fileAnalysisTypeDefs = gql`
     recommendations: [String!]!
     dataQuality: DataQuality
     visualizations: [Visualization!]!
+    extractedText: String
     rawAnalysis: JSON
     createdAt: DateTime!
     updatedAt: DateTime!

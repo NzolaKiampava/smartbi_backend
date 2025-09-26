@@ -14,6 +14,8 @@ try {
 export interface OCRResult {
   text: string;
   pages?: number;
+  pageSummaries?: Array<{ pageNumber: number; blocks: number }>;
+  entities?: Array<{ type?: string; mentionText?: string; confidence?: number }>;
 }
 
 export class DocumentAIService {
@@ -59,20 +61,47 @@ export class DocumentAIService {
     const name = this.client.processorPath(projectId, location, processorId);
 
     const fileBuffer = await fs.readFile(filePath);
+    const encoded = fileBuffer.toString('base64');
     const request = {
       name,
       rawDocument: {
-        content: fileBuffer,
+        content: encoded,
         mimeType: mimeType || this.getMimeType(filePath),
       },
-    };
+    } as any;
 
     try {
       const [result] = await this.client.processDocument(request);
-      const doc = result.document;
-      const text: string = doc?.text || '';
-      const pages = Array.isArray(doc?.pages) ? doc.pages.length : undefined;
-      return { text, pages };
+      const doc = result.document || {};
+      const text: string = (doc as any).text || '';
+      const pages = Array.isArray((doc as any).pages) ? (doc as any).pages.length : undefined;
+      const pageSummaries = Array.isArray((doc as any).pages)
+        ? (doc as any).pages.map((p: any, idx: number) => ({ pageNumber: idx + 1, blocks: p.blocks ? p.blocks.length : 0 }))
+        : undefined;
+      const entities = Array.isArray((doc as any).entities)
+        ? (doc as any).entities.map((e: any) => ({ type: e.type, mentionText: e.mentionText, confidence: e.confidence }))
+        : undefined;
+
+      // Console preview + save full text to file
+      const previewLen = Math.min(2000, text.length);
+      console.log(`📝 OCR extracted text preview (${previewLen}/${text.length} chars) from ${path.basename(filePath)}:`);
+      if (previewLen > 0) {
+        console.log('--- OCR TEXT START ---');
+        console.log(text.slice(0, previewLen));
+        if (text.length > previewLen) console.log('... [truncated]');
+        console.log('--- OCR TEXT END ---');
+      } else {
+        console.log('[no text extracted]');
+      }
+      try {
+        const outPath = `${filePath}.ocr.txt`;
+        await fs.writeFile(outPath, text, 'utf8');
+        console.log(`💾 Full OCR text saved to: ${outPath}`);
+      } catch (writeErr) {
+        console.warn('⚠️ Could not save OCR text to file:', writeErr);
+      }
+
+      return { text, pages, pageSummaries, entities };
     } catch (err) {
       const msg = String((err as any)?.message || err);
       if (msg.includes('Could not load the default credentials')) {

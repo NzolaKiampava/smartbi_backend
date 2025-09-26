@@ -89,6 +89,7 @@ export class FileAnalysisDatabaseService {
           summary: aiResponse.summary,
           execution_time: executionTime,
           recommendations: aiResponse.recommendations,
+          extracted_text: aiResponse.extractedText, // Store OCR text
           raw_analysis: aiResponse
         }])
         .select()
@@ -125,6 +126,7 @@ export class FileAnalysisDatabaseService {
         summary: reportData.summary,
         executionTime: reportData.execution_time,
         recommendations: reportData.recommendations,
+        extractedText: reportData.extracted_text, // Include OCR text
         insights,
         dataQuality,
         visualizations,
@@ -334,6 +336,7 @@ export class FileAnalysisDatabaseService {
         status: reportData.status,
         title: reportData.title,
         summary: reportData.summary,
+        extractedText: reportData.extracted_text, // Include OCR text
         insights,
         recommendations: [], // Empty for now
         visualizations: [], // Empty for now

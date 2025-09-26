@@ -31,7 +31,7 @@ const getGeminiConfig = () => {
   
   return {
     apiKey,
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     maxTokens: 2048,
     temperature: 0.1
   };

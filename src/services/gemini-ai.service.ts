@@ -17,8 +17,8 @@ export class GeminiAIService {
   constructor() {
     if (config.ai.geminiApiKey) {
       this.genAI = new GoogleGenerativeAI(config.ai.geminiApiKey);
-      this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      console.log('✅ Google Gemini AI initialized with gemini-1.5-flash model');
+      this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      console.log('✅ Google Gemini AI initialized with gemini-2.0-flash model');
     } else {
       console.log('⚠️  Google Gemini API key not provided, using fallback analysis');
     }
