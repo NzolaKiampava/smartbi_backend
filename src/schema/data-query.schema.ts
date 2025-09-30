@@ -165,6 +165,8 @@ export const dataQueryTypeDefs = `#graphql
     
     # Create connection without authentication (development only)
     createDataConnectionPublic(input: DataConnectionInput!): DataConnection!
+  # Delete connection without authentication (development only)
+  deleteDataConnectionPublic(id: ID!): Boolean!
     
     # AI Query Execution
     executeAIQuery(input: AIQueryInput!): AIQueryResult!
