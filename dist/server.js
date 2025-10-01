@@ -185,6 +185,23 @@ async function startServer() {
     app.use('/graphql', (0, express4_1.expressMiddleware)(server, {
         context: async ({ req, res }) => (0, auth_middleware_1.createGraphQLContext)(req, res),
     }));
+    app.use('/api/graphql', (0, express4_1.expressMiddleware)(server, {
+        context: async ({ req, res }) => (0, auth_middleware_1.createGraphQLContext)(req, res),
+    }));
+    app.all('/', (req, _res, next) => {
+        if (req.method === 'POST') {
+            req.url = '/graphql';
+        }
+        next();
+    });
+    app.get('/', (_req, res) => {
+        res.json({
+            success: true,
+            service: 'SmartBI Backend',
+            graphqlEndpoint: '/graphql',
+            health: '/health'
+        });
+    });
     app.use('*', (req, res) => {
         res.status(404).json({
             success: false,
