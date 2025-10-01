@@ -17,7 +17,7 @@ const getGeminiConfig = () => {
     }
     return {
         apiKey,
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         maxTokens: 2048,
         temperature: 0.1
     };
@@ -79,7 +79,6 @@ exports.dataQueryResolvers = {
                     id: conn.id,
                     companyId: conn.company_id,
                     name: conn.name,
-                    description: conn.description,
                     type: conn.type,
                     status: conn.status,
                     config: conn.config,
@@ -274,7 +273,6 @@ exports.dataQueryResolvers = {
                 const connectionData = {
                     company_id: companies.id,
                     name: input.name,
-                    description: input.description,
                     type: input.type,
                     status: data_query_1.ConnectionStatus.ACTIVE,
                     config: input.config,
@@ -293,7 +291,6 @@ exports.dataQueryResolvers = {
                     id: savedConnection.id,
                     companyId: savedConnection.company_id,
                     name: savedConnection.name,
-                    description: savedConnection.description,
                     type: savedConnection.type,
                     status: savedConnection.status,
                     config: savedConnection.config,
@@ -305,6 +302,27 @@ exports.dataQueryResolvers = {
             }
             catch (error) {
                 throw new Error(`Failed to create connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        },
+        deleteDataConnectionPublic: async (_, { id }, context) => {
+            if (process.env.NODE_ENV !== 'development') {
+                throw new Error('This endpoint is only available in development mode');
+            }
+            try {
+                const supabase = context.req.app.locals.supabase;
+                const { data: companies, error: companyError } = await supabase
+                    .from('companies')
+                    .select('id')
+                    .eq('slug', 'demo')
+                    .single();
+                if (companyError || !companies) {
+                    throw new Error('Demo company not found');
+                }
+                const service = new data_query_service_1.DataQueryService(supabase, getGeminiConfig());
+                return await service.deleteDataConnection(companies.id, id);
+            }
+            catch (error) {
+                throw new Error(`Failed to delete connection publicly: ${error instanceof Error ? error.message : 'Unknown error'}`);
             }
         },
         executeAIQuery: async (_, { input }, context) => {

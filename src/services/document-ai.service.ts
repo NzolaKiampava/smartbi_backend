@@ -26,6 +26,24 @@ export class DocumentAIService {
     const { projectId, location, processorId, keyFile } = (config as any).docai || {};
     const keyFromEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS;
     const credsPath = keyFile || keyFromEnv;
+
+    // If a service account JSON is provided as an env var (GCP_SERVICE_ACCOUNT_KEY),
+    // write it to /tmp and set GOOGLE_APPLICATION_CREDENTIALS so the client can pick it up.
+    const gcpKeyJson = process.env.GCP_SERVICE_ACCOUNT_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+    if (gcpKeyJson && !credsPath) {
+      try {
+        const tmpPath = path.join('/tmp', 'gcp-credentials.json');
+        // write file synchronously at startup
+        void fs.writeFile(tmpPath, gcpKeyJson, 'utf8').then(() => {
+          process.env.GOOGLE_APPLICATION_CREDENTIALS = tmpPath;
+          console.log('✅ Wrote GCP service account JSON to', tmpPath);
+        }).catch((err) => {
+          console.warn('⚠️ Failed to write GCP credentials to /tmp:', err);
+        });
+      } catch (err) {
+        console.warn('⚠️ Could not initialize GCP keyfile from env:', err);
+      }
+    }
     if (projectId && location && processorId && DocumentProcessorServiceClient) {
       const apiEndpoint = `${location}-documentai.googleapis.com`;
       const clientOptions: any = { apiEndpoint };

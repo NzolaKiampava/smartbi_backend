@@ -66,32 +66,12 @@ export declare class APIRestAdapter extends BaseAdapter {
     executeQuery(config: DataConnectionConfig, query: string): Promise<any[]>;
     sanitizeQuery(query: string): string;
 }
-export declare class FirebaseAdapter extends BaseAdapter {
-    testConnection(config: DataConnectionConfig): Promise<{
-        success: boolean;
-        message: string;
-        latency?: number;
-    }>;
-    getSchemaInfo(config: DataConnectionConfig): Promise<SchemaInfo>;
-    executeQuery(config: DataConnectionConfig, query: string): Promise<any[]>;
-}
-export declare class MongoDBAdapter extends BaseAdapter {
-    testConnection(config: DataConnectionConfig): Promise<{
-        success: boolean;
-        message: string;
-        latency?: number;
-    }>;
-    getSchemaInfo(config: DataConnectionConfig): Promise<SchemaInfo>;
-    executeQuery(config: DataConnectionConfig, query: string): Promise<any[]>;
-}
 export declare function createDatabaseAdapter(type: ConnectionType): DatabaseAdapter;
 declare const _default: {
     MySQLAdapter: typeof MySQLAdapter;
     PostgreSQLAdapter: typeof PostgreSQLAdapter;
     SupabaseAdapter: typeof SupabaseAdapter;
     APIRestAdapter: typeof APIRestAdapter;
-    FirebaseAdapter: typeof FirebaseAdapter;
-    MongoDBAdapter: typeof MongoDBAdapter;
     createDatabaseAdapter: typeof createDatabaseAdapter;
 };
 export default _default;

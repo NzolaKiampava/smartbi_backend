@@ -33,7 +33,7 @@ export interface Parameter {
 }
 export interface AIQueryResult {
     generatedQuery: string;
-    queryType: 'SQL' | 'API_CALL' | 'FIRESTORE' | 'MONGODB' | 'ERROR';
+    queryType: 'SQL' | 'API_CALL' | 'ERROR';
     confidence: number;
     explanation?: string;
 }
@@ -45,14 +45,6 @@ export declare class AIQueryService {
     translateToAPICall(options: Omit<AIQueryOptions, 'schemaInfo'>): Promise<AIQueryResult>;
     private buildSQLPrompt;
     private buildAPIPrompt;
-    translateToFirestore(options: Omit<AIQueryOptions, 'schemaInfo'> & {
-        collections?: string[];
-    }): Promise<AIQueryResult>;
-    translateToMongoDB(options: Omit<AIQueryOptions, 'schemaInfo'> & {
-        collections?: string[];
-    }): Promise<AIQueryResult>;
-    private buildFirestorePrompt;
-    private buildMongoDBPrompt;
     private callGeminiAPIWithRetry;
     private callGeminiAPI;
     private parseSQLResponse;

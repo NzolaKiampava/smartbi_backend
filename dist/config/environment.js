@@ -13,13 +13,18 @@ const envSchema = zod_1.z.object({
     SUPABASE_URL: zod_1.z.string().url(),
     SUPABASE_ANON_KEY: zod_1.z.string(),
     SUPABASE_SERVICE_ROLE_KEY: zod_1.z.string(),
+    GOOGLE_GEMINI_API_KEY: zod_1.z.string().optional(),
+    GCP_PROJECT_ID: zod_1.z.string().optional(),
+    DOCUMENT_AI_LOCATION: zod_1.z.string().optional(),
+    DOCUMENT_AI_PROCESSOR_ID: zod_1.z.string().optional(),
+    DOCUMENT_AI_KEYFILE: zod_1.z.string().optional(),
     JWT_SECRET: zod_1.z.string().min(32),
     JWT_EXPIRES_IN: zod_1.z.string().default('7d'),
     JWT_REFRESH_EXPIRES_IN: zod_1.z.string().default('30d'),
     BCRYPT_ROUNDS: zod_1.z.string().transform(Number).default('12'),
     RATE_LIMIT_WINDOW_MS: zod_1.z.string().transform(Number).default('900000'),
     RATE_LIMIT_MAX_REQUESTS: zod_1.z.string().transform(Number).default('100'),
-    ALLOWED_ORIGINS: zod_1.z.string().default('http://localhost:3000,http://localhost:5173'),
+    ALLOWED_ORIGINS: zod_1.z.string().default('http://localhost:3000,http://localhost:5173,http://localhost:4000'),
 });
 const env = envSchema.safeParse(process.env);
 if (!env.success) {
@@ -36,6 +41,15 @@ exports.config = {
         url: env.data.SUPABASE_URL,
         anonKey: env.data.SUPABASE_ANON_KEY,
         serviceRoleKey: env.data.SUPABASE_SERVICE_ROLE_KEY,
+    },
+    ai: {
+        geminiApiKey: env.data.GOOGLE_GEMINI_API_KEY,
+    },
+    docai: {
+        projectId: env.data.GCP_PROJECT_ID,
+        location: env.data.DOCUMENT_AI_LOCATION,
+        processorId: env.data.DOCUMENT_AI_PROCESSOR_ID,
+        keyFile: env.data.DOCUMENT_AI_KEYFILE,
     },
     jwt: {
         secret: env.data.JWT_SECRET,

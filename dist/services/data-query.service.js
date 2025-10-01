@@ -230,68 +230,6 @@ class DataQueryService {
                     }
                 }
             }
-            else if (connection.type === data_query_1.ConnectionType.FIREBASE) {
-                const adapter = (0, database_adapters_service_1.createDatabaseAdapter)(connection.type);
-                const schemaInfo = await adapter.getSchemaInfo(decryptedConfig);
-                const collections = schemaInfo.tables.map(table => table.name);
-                const aiResult = await this.aiService.translateToFirestore({
-                    connectionType: connection.type,
-                    naturalQuery: input.naturalQuery,
-                    collections: collections
-                });
-                generatedQuery = aiResult.generatedQuery;
-                if (aiResult.queryType === 'ERROR') {
-                    status = data_query_1.QueryStatus.ERROR;
-                    errorMessage = aiResult.explanation;
-                }
-                else {
-                    try {
-                        const firestoreQuery = JSON.parse(aiResult.generatedQuery);
-                        if (firestoreQuery.error) {
-                            status = data_query_1.QueryStatus.ERROR;
-                            errorMessage = firestoreQuery.error;
-                        }
-                        else {
-                            results = await adapter.executeQuery(decryptedConfig, aiResult.generatedQuery);
-                        }
-                    }
-                    catch (error) {
-                        status = data_query_1.QueryStatus.ERROR;
-                        errorMessage = `Firestore execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-                    }
-                }
-            }
-            else if (connection.type === data_query_1.ConnectionType.MONGODB) {
-                const adapter = (0, database_adapters_service_1.createDatabaseAdapter)(connection.type);
-                const schemaInfo = await adapter.getSchemaInfo(decryptedConfig);
-                const collections = schemaInfo.tables.map(table => table.name);
-                const aiResult = await this.aiService.translateToMongoDB({
-                    connectionType: connection.type,
-                    naturalQuery: input.naturalQuery,
-                    collections: collections
-                });
-                generatedQuery = aiResult.generatedQuery;
-                if (aiResult.queryType === 'ERROR') {
-                    status = data_query_1.QueryStatus.ERROR;
-                    errorMessage = aiResult.explanation;
-                }
-                else {
-                    try {
-                        const mongoQuery = JSON.parse(aiResult.generatedQuery);
-                        if (mongoQuery.error) {
-                            status = data_query_1.QueryStatus.ERROR;
-                            errorMessage = mongoQuery.error;
-                        }
-                        else {
-                            results = await adapter.executeQuery(decryptedConfig, aiResult.generatedQuery);
-                        }
-                    }
-                    catch (error) {
-                        status = data_query_1.QueryStatus.ERROR;
-                        errorMessage = `MongoDB execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-                    }
-                }
-            }
             else {
                 const adapter = (0, database_adapters_service_1.createDatabaseAdapter)(connection.type);
                 const schemaInfo = await adapter.getSchemaInfo(decryptedConfig);

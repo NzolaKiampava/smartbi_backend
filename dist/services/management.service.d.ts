@@ -27,7 +27,7 @@ export interface PaginationInput {
 }
 export declare class ManagementService {
     static getCompanies(pagination?: PaginationInput): Promise<{
-        companies: any[];
+        companies: Company[];
         total: number;
         hasMore: boolean;
     }>;

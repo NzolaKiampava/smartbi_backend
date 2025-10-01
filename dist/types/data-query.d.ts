@@ -2,14 +2,9 @@ export declare enum ConnectionType {
     MYSQL = "MYSQL",
     POSTGRESQL = "POSTGRESQL",
     SUPABASE = "SUPABASE",
-    API_REST = "API_REST",
-    API_GRAPHQL = "API_GRAPHQL",
     FIREBASE = "FIREBASE",
-    MONGODB = "MONGODB",
-    REDIS = "REDIS",
-    ELASTICSEARCH = "ELASTICSEARCH",
-    CASSANDRA = "CASSANDRA",
-    DYNAMODB = "DYNAMODB"
+    API_REST = "API_REST",
+    API_GRAPHQL = "API_GRAPHQL"
 }
 export declare enum ConnectionStatus {
     ACTIVE = "ACTIVE",
@@ -25,7 +20,6 @@ export interface DataConnection {
     id: string;
     companyId: string;
     name: string;
-    description?: string;
     type: ConnectionType;
     status: ConnectionStatus;
     config: DataConnectionConfig;
@@ -96,7 +90,6 @@ export interface ConnectionTestInput {
 }
 export interface DataConnectionInput {
     name: string;
-    description?: string;
     type: ConnectionType;
     config: DataConnectionConfigInput;
     isDefault?: boolean;

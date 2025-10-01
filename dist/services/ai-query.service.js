@@ -6,7 +6,7 @@ class AIQueryService {
     constructor(geminiConfig) {
         this.GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
         this.geminiConfig = {
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.0-flash',
             maxTokens: 2048,
             temperature: 0.1,
             maxRetries: 3,
@@ -157,197 +157,6 @@ If the query cannot be matched to any available endpoint, return:
   "error": "No matching endpoint found",
   "reason": "Explanation of why no endpoint matches"
 }
-
-Respond with ONLY the JSON object:
-    `.trim();
-    }
-    async translateToFirestore(options) {
-        try {
-            if (!this.geminiConfig.apiKey || this.geminiConfig.apiKey.trim() === '') {
-                return {
-                    generatedQuery: JSON.stringify({ error: 'API key not configured' }),
-                    queryType: 'ERROR',
-                    confidence: 0,
-                    explanation: 'Gemini API key is not configured. Please check your environment variables.'
-                };
-            }
-            const prompt = this.buildFirestorePrompt(options);
-            console.log('Firestore Prompt:', prompt);
-            const response = await this.callGeminiAPIWithRetry(prompt);
-            console.log('Gemini Firestore Response:', response);
-            return {
-                generatedQuery: response,
-                queryType: 'FIRESTORE',
-                confidence: 85,
-                explanation: 'Query translated to Firestore collection and filter format'
-            };
-        }
-        catch (error) {
-            console.error('Error in translateToFirestore:', error);
-            let errorMessage = 'Unknown error';
-            let explanation = 'An unexpected error occurred while translating the query.';
-            if (error instanceof Error) {
-                errorMessage = error.message;
-                if (error.message.includes('503')) {
-                    explanation = 'O serviço Gemini está temporariamente indisponível. Tente novamente em alguns minutos.';
-                }
-                else if (error.message.includes('429')) {
-                    explanation = 'Limite de requisições excedido. Aguarde alguns minutos antes de tentar novamente.';
-                }
-                else if (error.message.includes('401') || error.message.includes('403')) {
-                    explanation = 'Erro de autenticação. Verifique se a API key do Gemini está configurada corretamente.';
-                }
-                else if (error.message.includes('400')) {
-                    explanation = 'Erro na requisição. Verifique se a consulta está bem formatada.';
-                }
-                else if (error.message.includes('network') || error.message.includes('fetch')) {
-                    explanation = 'Erro de conexão. Verifique sua conexão com a internet.';
-                }
-            }
-            return {
-                generatedQuery: JSON.stringify({ error: errorMessage }),
-                queryType: 'ERROR',
-                confidence: 0,
-                explanation
-            };
-        }
-    }
-    async translateToMongoDB(options) {
-        try {
-            if (!this.geminiConfig.apiKey || this.geminiConfig.apiKey.trim() === '') {
-                return {
-                    generatedQuery: JSON.stringify({ error: 'API key not configured' }),
-                    queryType: 'ERROR',
-                    confidence: 0,
-                    explanation: 'Gemini API key is not configured. Please check your environment variables.'
-                };
-            }
-            const prompt = this.buildMongoDBPrompt(options);
-            console.log('MongoDB Prompt:', prompt);
-            const response = await this.callGeminiAPIWithRetry(prompt);
-            console.log('Gemini MongoDB Response:', response);
-            return {
-                generatedQuery: response,
-                queryType: 'MONGODB',
-                confidence: 85,
-                explanation: 'Query translated to MongoDB collection and operation format'
-            };
-        }
-        catch (error) {
-            console.error('Error in translateToMongoDB:', error);
-            let errorMessage = 'Unknown error';
-            let explanation = 'An unexpected error occurred while translating the query.';
-            if (error instanceof Error) {
-                errorMessage = error.message;
-                if (error.message.includes('503')) {
-                    explanation = 'O serviço Gemini está temporariamente indisponível. Tente novamente em alguns minutos.';
-                }
-                else if (error.message.includes('429')) {
-                    explanation = 'Limite de requisições excedido. Aguarde alguns minutos antes de tentar novamente.';
-                }
-                else if (error.message.includes('401') || error.message.includes('403')) {
-                    explanation = 'Erro de autenticação. Verifique se a API key do Gemini está configurada corretamente.';
-                }
-                else if (error.message.includes('400')) {
-                    explanation = 'Erro na requisição. Verifique se a consulta está bem formatada.';
-                }
-                else if (error.message.includes('network') || error.message.includes('fetch')) {
-                    explanation = 'Erro de conexão. Verifique sua conexão com a internet.';
-                }
-            }
-            return {
-                generatedQuery: JSON.stringify({ error: errorMessage }),
-                queryType: 'ERROR',
-                confidence: 0,
-                explanation
-            };
-        }
-    }
-    buildFirestorePrompt(options) {
-        const { naturalQuery, collections = [] } = options;
-        const collectionsDescription = collections.length > 0
-            ? collections.join(', ')
-            : 'users, products, orders, posts, comments';
-        return `
-You are a Firestore query translator for Firebase.
-Convert this natural language query to a Firestore collection and filter format.
-
-USER QUERY: "${naturalQuery}"
-
-AVAILABLE COLLECTIONS: ${collectionsDescription}
-
-IMPORTANT RULES:
-1. Generate ONLY a JSON object without markdown formatting or explanations
-2. Use this structure:
-{
-  "collection": "collection_name",
-  "operation": "get|add|update|delete",
-  "filters": [
-    { "field": "field_name", "operator": "==|!=|>|<|>=|<=|in|array-contains", "value": "value" }
-  ],
-  "orderBy": [
-    { "field": "field_name", "direction": "asc|desc" }
-  ],
-  "limit": number,
-  "data": { "field": "value" } // only for add/update operations
-}
-
-3. Firestore operators: ==, !=, >, <, >=, <=, in, array-contains, array-contains-any
-4. For dates, use ISO format: "2024-01-01T00:00:00Z"
-5. For numeric values, don't use quotes
-6. Boolean values: true/false (no quotes)
-
-EXAMPLES:
-Query: "buscar todos os usuários ativos"
-Response: {"collection": "users", "operation": "get", "filters": [{"field": "active", "operator": "==", "value": true}]}
-
-Query: "produtos com preço maior que 100"
-Response: {"collection": "products", "operation": "get", "filters": [{"field": "price", "operator": ">", "value": 100}]}
-
-Respond with ONLY the JSON object:
-    `.trim();
-    }
-    buildMongoDBPrompt(options) {
-        const { naturalQuery, collections = [] } = options;
-        const collectionsDescription = collections.length > 0
-            ? collections.join(', ')
-            : 'users, products, orders, posts, comments';
-        return `
-You are a MongoDB query translator.
-Convert this natural language query to a MongoDB collection and operation format.
-
-USER QUERY: "${naturalQuery}"
-
-AVAILABLE COLLECTIONS: ${collectionsDescription}
-
-IMPORTANT RULES:
-1. Generate ONLY a JSON object without markdown formatting or explanations
-2. Use this structure:
-{
-  "collection": "collection_name",
-  "operation": "find|insertOne|updateOne|deleteOne|aggregate",
-  "filter": { MongoDB query filter },
-  "projection": { MongoDB projection },
-  "sort": { MongoDB sort },
-  "limit": number,
-  "data": { document data } // only for insert/update operations,
-  "pipeline": [ MongoDB aggregation pipeline ] // only for aggregate operations
-}
-
-3. MongoDB operators: $eq, $ne, $gt, $lt, $gte, $lte, $in, $nin, $exists, $regex, etc.
-4. For dates, use ISODate format or MongoDB date operators
-5. Use ObjectId("id") for _id fields
-6. For text search, use $regex with appropriate flags
-
-EXAMPLES:
-Query: "buscar todos os usuários ativos"
-Response: {"collection": "users", "operation": "find", "filter": {"active": true}}
-
-Query: "produtos com preço maior que 100"
-Response: {"collection": "products", "operation": "find", "filter": {"price": {"$gt": 100}}}
-
-Query: "contar pedidos por categoria"
-Response: {"collection": "orders", "operation": "aggregate", "pipeline": [{"$group": {"_id": "$category", "count": {"$sum": 1}}}]}
 
 Respond with ONLY the JSON object:
     `.trim();
@@ -511,6 +320,7 @@ Respond with ONLY the JSON object:
                 return 'MySQL';
             case data_query_1.ConnectionType.POSTGRESQL:
             case data_query_1.ConnectionType.SUPABASE:
+            case data_query_1.ConnectionType.FIREBASE:
                 return 'PostgreSQL';
             default:
                 return 'SQL';

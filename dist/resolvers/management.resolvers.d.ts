@@ -8,7 +8,7 @@ export declare const managementResolvers: {
         }, context: GraphQLContext) => Promise<{
             success: boolean;
             data: {
-                companies: any[];
+                companies: import("../types/auth").Company[];
                 total: number;
                 hasMore: boolean;
             };

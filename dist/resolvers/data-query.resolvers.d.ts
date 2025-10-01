@@ -46,6 +46,9 @@ export declare const dataQueryResolvers: {
         createDataConnectionPublic: (_: any, { input }: {
             input: DataConnectionInput;
         }, context: GraphQLContext) => Promise<DataConnection>;
+        deleteDataConnectionPublic: (_: any, { id }: {
+            id: string;
+        }, context: GraphQLContext) => Promise<boolean>;
         executeAIQuery: (_: any, { input }: {
             input: AIQueryInput;
         }, context: GraphQLContext) => Promise<AIQueryResult>;

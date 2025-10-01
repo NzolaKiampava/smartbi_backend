@@ -6,14 +6,9 @@ var ConnectionType;
     ConnectionType["MYSQL"] = "MYSQL";
     ConnectionType["POSTGRESQL"] = "POSTGRESQL";
     ConnectionType["SUPABASE"] = "SUPABASE";
+    ConnectionType["FIREBASE"] = "FIREBASE";
     ConnectionType["API_REST"] = "API_REST";
     ConnectionType["API_GRAPHQL"] = "API_GRAPHQL";
-    ConnectionType["FIREBASE"] = "FIREBASE";
-    ConnectionType["MONGODB"] = "MONGODB";
-    ConnectionType["REDIS"] = "REDIS";
-    ConnectionType["ELASTICSEARCH"] = "ELASTICSEARCH";
-    ConnectionType["CASSANDRA"] = "CASSANDRA";
-    ConnectionType["DYNAMODB"] = "DYNAMODB";
 })(ConnectionType || (exports.ConnectionType = ConnectionType = {}));
 var ConnectionStatus;
 (function (ConnectionStatus) {

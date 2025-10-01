@@ -8,6 +8,15 @@ export declare const config: {
         anonKey: string;
         serviceRoleKey: string;
     };
+    ai: {
+        geminiApiKey: string | undefined;
+    };
+    docai: {
+        projectId: string | undefined;
+        location: string | undefined;
+        processorId: string | undefined;
+        keyFile: string | undefined;
+    };
     jwt: {
         secret: string;
         expiresIn: string;

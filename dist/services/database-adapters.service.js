@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MongoDBAdapter = exports.FirebaseAdapter = exports.APIRestAdapter = exports.SupabaseAdapter = exports.PostgreSQLAdapter = exports.MySQLAdapter = exports.BaseAdapter = void 0;
+exports.APIRestAdapter = exports.SupabaseAdapter = exports.PostgreSQLAdapter = exports.MySQLAdapter = exports.BaseAdapter = void 0;
 exports.createDatabaseAdapter = createDatabaseAdapter;
 const data_query_1 = require("../types/data-query");
 const promise_1 = __importDefault(require("mysql2/promise"));
@@ -548,296 +548,6 @@ class APIRestAdapter extends BaseAdapter {
     }
 }
 exports.APIRestAdapter = APIRestAdapter;
-class FirebaseAdapter extends BaseAdapter {
-    async testConnection(config) {
-        const startTime = Date.now();
-        try {
-            const projectId = config.apiUrl || config.database;
-            const apiKey = config.apiKey || config.password;
-            if (!projectId) {
-                return {
-                    success: false,
-                    message: 'Firebase project ID is required (use apiUrl or database field)'
-                };
-            }
-            let testUrl = `https://firebase.googleapis.com/v1beta1/projects/${projectId}`;
-            if (apiKey) {
-                testUrl += `?key=${apiKey}`;
-            }
-            let response;
-            try {
-                response = await axios_1.default.get(testUrl, {
-                    headers: { 'Content-Type': 'application/json' },
-                    timeout: this.timeout,
-                    validateStatus: (status) => status < 500
-                });
-            }
-            catch (projectError) {
-                const firestoreUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-                const firestoreHeaders = {
-                    'Content-Type': 'application/json'
-                };
-                if (apiKey) {
-                    firestoreHeaders['Authorization'] = `Bearer ${apiKey}`;
-                }
-                response = await axios_1.default.get(firestoreUrl, {
-                    headers: firestoreHeaders,
-                    timeout: this.timeout,
-                    validateStatus: (status) => status < 500
-                });
-            }
-            const latency = Date.now() - startTime;
-            if (response.status === 200 || response.status === 403 || response.status === 401) {
-                return {
-                    success: true,
-                    message: `Firebase connection successful (Status: ${response.status}) - Project "${projectId}" exists`,
-                    latency
-                };
-            }
-            return {
-                success: false,
-                message: `Firebase connection failed: ${response.status} ${response.statusText}`
-            };
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                const status = error.response?.status;
-                const message = error.response?.statusText || error.message;
-                if (status === 404) {
-                    return {
-                        success: false,
-                        message: `Firebase project "${config.apiUrl}" not found. Please verify the project ID.`
-                    };
-                }
-                return {
-                    success: false,
-                    message: `Firebase connection failed: ${status} ${message}`
-                };
-            }
-            return {
-                success: false,
-                message: `Firebase connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-            };
-        }
-    }
-    async getSchemaInfo(config) {
-        try {
-            const projectId = config.apiUrl || config.database;
-            const apiKey = config.apiKey || config.password;
-            if (!projectId) {
-                throw new Error('Firebase project ID is required');
-            }
-            const tables = [];
-            try {
-                let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`;
-                if (apiKey) {
-                    url += `?key=${apiKey}`;
-                }
-                const headers = {
-                    'Content-Type': 'application/json'
-                };
-                if (apiKey) {
-                    headers['Authorization'] = `Bearer ${apiKey}`;
-                }
-                const response = await axios_1.default.get(url, {
-                    headers,
-                    timeout: this.timeout,
-                    validateStatus: (status) => status < 500
-                });
-                if (response.status === 200 && response.data && response.data.documents) {
-                    const collections = new Set();
-                    response.data.documents.forEach((doc) => {
-                        if (doc.name) {
-                            const pathParts = doc.name.split('/');
-                            if (pathParts.length >= 6) {
-                                collections.add(pathParts[5]);
-                            }
-                        }
-                    });
-                    collections.forEach(collectionName => {
-                        tables.push({
-                            name: collectionName,
-                            columns: [
-                                { name: 'id', type: 'string', nullable: false },
-                                { name: 'createTime', type: 'timestamp', nullable: true },
-                                { name: 'updateTime', type: 'timestamp', nullable: true },
-                                { name: 'fields', type: 'map', nullable: true }
-                            ]
-                        });
-                    });
-                }
-            }
-            catch (apiError) {
-                console.log(`Firebase schema API call failed (expected for auth issues): ${apiError instanceof Error ? apiError.message : 'Unknown error'}`);
-            }
-            if (tables.length === 0) {
-                tables.push({
-                    name: 'users',
-                    columns: [
-                        { name: 'id', type: 'string', nullable: false },
-                        { name: 'name', type: 'string', nullable: true },
-                        { name: 'email', type: 'string', nullable: true },
-                        { name: 'active', type: 'boolean', nullable: true },
-                        { name: 'createdAt', type: 'timestamp', nullable: true },
-                        { name: 'updatedAt', type: 'timestamp', nullable: true }
-                    ]
-                }, {
-                    name: 'products',
-                    columns: [
-                        { name: 'id', type: 'string', nullable: false },
-                        { name: 'name', type: 'string', nullable: true },
-                        { name: 'price', type: 'number', nullable: true },
-                        { name: 'category', type: 'string', nullable: true },
-                        { name: 'inStock', type: 'boolean', nullable: true },
-                        { name: 'createdAt', type: 'timestamp', nullable: true }
-                    ]
-                }, {
-                    name: 'orders',
-                    columns: [
-                        { name: 'id', type: 'string', nullable: false },
-                        { name: 'userId', type: 'string', nullable: true },
-                        { name: 'total', type: 'number', nullable: true },
-                        { name: 'status', type: 'string', nullable: true },
-                        { name: 'createdAt', type: 'timestamp', nullable: true }
-                    ]
-                });
-            }
-            return {
-                tables,
-                totalTables: tables.length
-            };
-        }
-        catch (error) {
-            const defaultTables = [
-                {
-                    name: 'firestore_collection',
-                    columns: [
-                        { name: 'id', type: 'string', nullable: false },
-                        { name: 'createTime', type: 'timestamp', nullable: true },
-                        { name: 'updateTime', type: 'timestamp', nullable: true },
-                        { name: 'fields', type: 'map', nullable: true }
-                    ]
-                }
-            ];
-            return {
-                tables: defaultTables,
-                totalTables: defaultTables.length
-            };
-        }
-    }
-    async executeQuery(config, query) {
-        try {
-            const sanitizedQuery = this.sanitizeQuery(query);
-            const projectId = config.apiUrl || config.database;
-            const apiKey = config.apiKey || config.password;
-            if (!projectId) {
-                throw new Error('Firebase project ID is required');
-            }
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-            if (apiKey) {
-                headers['Authorization'] = `Bearer ${apiKey}`;
-            }
-            const collectionMatch = sanitizedQuery.match(/FROM\s+(\w+)/i);
-            const collectionName = collectionMatch ? collectionMatch[1] : sanitizedQuery.replace(/[^a-zA-Z0-9_]/g, '');
-            const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}`;
-            const response = await axios_1.default.get(url, {
-                headers,
-                timeout: this.timeout
-            });
-            if (response.data && response.data.documents) {
-                return response.data.documents.map((doc) => ({
-                    id: doc.name.split('/').pop(),
-                    createTime: doc.createTime,
-                    updateTime: doc.updateTime,
-                    fields: doc.fields || {}
-                }));
-            }
-            return [{ result: response.data }];
-        }
-        catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
-                throw new Error(`Firebase query failed: ${error.response?.status} ${error.response?.statusText || error.message}`);
-            }
-            throw new Error(`Firebase query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    }
-}
-exports.FirebaseAdapter = FirebaseAdapter;
-class MongoDBAdapter extends BaseAdapter {
-    async testConnection(config) {
-        const startTime = Date.now();
-        try {
-            let connectionString;
-            if (config.apiUrl) {
-                connectionString = config.apiUrl;
-            }
-            else {
-                const host = config.host || 'localhost';
-                const port = config.port || 27017;
-                const database = config.database || 'test';
-                if (config.username && config.password) {
-                    connectionString = `mongodb://${config.username}:${config.password}@${host}:${port}/${database}`;
-                }
-                else {
-                    connectionString = `mongodb://${host}:${port}/${database}`;
-                }
-            }
-            const latency = Date.now() - startTime;
-            return {
-                success: true,
-                message: `MongoDB connection configured (${connectionString})`,
-                latency
-            };
-        }
-        catch (error) {
-            return {
-                success: false,
-                message: `MongoDB connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-            };
-        }
-    }
-    async getSchemaInfo(config) {
-        try {
-            const tables = [
-                {
-                    name: 'mongodb_collection',
-                    columns: [
-                        { name: '_id', type: 'ObjectId', nullable: false },
-                        { name: 'createdAt', type: 'Date', nullable: true },
-                        { name: 'updatedAt', type: 'Date', nullable: true },
-                        { name: 'document', type: 'Object', nullable: true }
-                    ]
-                }
-            ];
-            return {
-                tables,
-                totalTables: tables.length
-            };
-        }
-        catch (error) {
-            throw new Error(`Failed to get MongoDB schema: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    }
-    async executeQuery(config, query) {
-        try {
-            const sanitizedQuery = this.sanitizeQuery(query);
-            return [
-                {
-                    _id: 'mock_id_1',
-                    message: 'MongoDB adapter configured but requires MongoDB driver implementation',
-                    query: sanitizedQuery,
-                    timestamp: new Date().toISOString()
-                }
-            ];
-        }
-        catch (error) {
-            throw new Error(`MongoDB query failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    }
-}
-exports.MongoDBAdapter = MongoDBAdapter;
 function createDatabaseAdapter(type) {
     switch (type) {
         case data_query_1.ConnectionType.MYSQL:
@@ -846,12 +556,10 @@ function createDatabaseAdapter(type) {
             return new PostgreSQLAdapter();
         case data_query_1.ConnectionType.SUPABASE:
             return new SupabaseAdapter();
+        case data_query_1.ConnectionType.FIREBASE:
+            return new SupabaseAdapter();
         case data_query_1.ConnectionType.API_REST:
             return new APIRestAdapter();
-        case data_query_1.ConnectionType.FIREBASE:
-            return new FirebaseAdapter();
-        case data_query_1.ConnectionType.MONGODB:
-            return new MongoDBAdapter();
         default:
             throw new Error(`Unsupported connection type: ${type}`);
     }
@@ -861,8 +569,6 @@ exports.default = {
     PostgreSQLAdapter,
     SupabaseAdapter,
     APIRestAdapter,
-    FirebaseAdapter,
-    MongoDBAdapter,
     createDatabaseAdapter
 };
 //# sourceMappingURL=database-adapters.service.js.map

@@ -6,14 +6,9 @@ exports.dataQueryTypeDefs = `#graphql
     MYSQL
     POSTGRESQL
     SUPABASE
+    FIREBASE
     API_REST
     API_GRAPHQL
-    FIREBASE
-    MONGODB
-    REDIS
-    ELASTICSEARCH
-    CASSANDRA
-    DYNAMODB
   }
 
   enum ConnectionStatus {
@@ -26,7 +21,6 @@ exports.dataQueryTypeDefs = `#graphql
     id: ID!
     companyId: ID!
     name: String!
-    description: String
     type: ConnectionType!
     status: ConnectionStatus!
     config: DataConnectionConfig!
@@ -55,7 +49,6 @@ exports.dataQueryTypeDefs = `#graphql
 
   input DataConnectionInput {
     name: String!
-    description: String
     type: ConnectionType!
     config: DataConnectionConfigInput!
     isDefault: Boolean
@@ -175,6 +168,8 @@ exports.dataQueryTypeDefs = `#graphql
     
     # Create connection without authentication (development only)
     createDataConnectionPublic(input: DataConnectionInput!): DataConnection!
+  # Delete connection without authentication (development only)
+  deleteDataConnectionPublic(id: ID!): Boolean!
     
     # AI Query Execution
     executeAIQuery(input: AIQueryInput!): AIQueryResult!
