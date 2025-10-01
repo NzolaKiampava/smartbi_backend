@@ -22,7 +22,6 @@
     "@apollo/server": "^4.9.5",
     "@google/generative-ai": "^0.24.1",
   "@google-cloud/documentai": "^9.4.0",
-    "@as-integrations/vercel": "^1.1.0",
     "@supabase/supabase-js": "^2.57.4",
     "@types/multer": "^2.0.0",
     "@types/xml2js": "^0.4.14",

@@ -1,6 +1,7 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import express from 'express';
 import { ApolloServer } from '@apollo/server';
-import { startServerAndCreateVercelHandler } from '@as-integrations/vercel';
+import { expressMiddleware } from '@apollo/server/express4';
+import { json } from 'body-parser';
 import { typeDefs } from '../src/schema';
 import { resolvers } from '../src/resolvers';
 
@@ -11,16 +12,28 @@ const server = new ApolloServer({
   csrfPrevention: false
 });
 
-export default startServerAndCreateVercelHandler(server, {
-  context: async ({ req, res }: { req: VercelRequest; res: VercelResponse }) => {
-    // Reuse the same context creation used by the Express server
-    // Note: createGraphQLContext expects (req,res) from Express; adjust if necessary
-    try {
-      // Lazy import to avoid circular deps
-      const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
-      return createGraphQLContext(req as any, res as any);
-    } catch (err) {
-      console.warn('Could not create GraphQL context for Vercel handler:', err);
-      return { req, res } as any;
+// Initialize Express app and apply Apollo middleware
+const app = express();
+app.use(json());
+
+// Lazy initialize Apollo and attach middleware
+async function init() {
+  await server.start();
+  app.use('/api/graphql', await expressMiddleware(server, {
+    context: async ({ req, res }: any) => {
+      try {
+        const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
+        return createGraphQLContext(req, res);
+      } catch (err) {
+        console.warn('Could not create GraphQL context for serverless handler:', err);
+        return { req, res };
+      }
     }
+  }));
+}
+
+init().catch(err => {
+  console.error('Failed to start Apollo server in serverless handler:', err);
 });
+
+export default app;
