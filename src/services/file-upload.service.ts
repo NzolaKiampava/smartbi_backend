@@ -1,6 +1,7 @@
 import { generateId } from '../utils/uuid';
 import path from 'path';
 import fs from 'fs/promises';
+import * as os from 'os';
 import { createReadStream, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import * as XLSX from 'xlsx';
@@ -20,7 +21,10 @@ export class FileUploadService {
   private config: AnalysisConfig;
 
   constructor() {
-    this.uploadDir = process.env.UPLOAD_DIR || './uploads';
+  // Use an environment-configurable upload directory. On serverless platforms like Vercel
+  // prefer the OS temp directory because the project root is read-only.
+  const defaultUploadDir = path.join(os.tmpdir(), 'smartbi_uploads');
+  this.uploadDir = process.env.UPLOAD_DIR || defaultUploadDir;
     this.config = {
       maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '50000000'), // 50MB
       allowedTypes: [
@@ -45,8 +49,19 @@ export class FileUploadService {
   private async ensureUploadDirectory(): Promise<void> {
     try {
       await fs.access(this.uploadDir);
-    } catch {
+      return;
+    } catch (err) {
+      // Not accessible - try to create
+    }
+
+    try {
       await fs.mkdir(this.uploadDir, { recursive: true });
+      console.log(`✅ Upload directory ensured at ${this.uploadDir}`);
+    } catch (err) {
+      // If we can't create the directory, log a warning but don't crash the serverless function.
+      // Subsequent write operations will fail and should be handled by callers.
+      const e: any = err;
+      console.warn(`⚠️ Could not create upload directory (${this.uploadDir}):`, e?.message || e);
     }
   }
 
