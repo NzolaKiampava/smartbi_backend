@@ -25,10 +25,11 @@ app.get('/', (_req, res) => {
 
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
-// Lazy initialize Apollo and attach middleware just for /graphql
+// Lazy initialize Apollo and attach middleware at root (Vercel maps file to /api/graphql)
 async function init() {
   await server.start();
-  app.use('/graphql', await expressMiddleware(server as any, {
+  // Primary mount at root path
+  app.use('/', await expressMiddleware(server as any, {
     context: async ({ req, res }: any) => {
       try {
         const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
@@ -40,13 +41,19 @@ async function init() {
     }
   }));
 
-  // Convenience: POSTing to root forwards to /graphql (some clients may call /api/graphql directly)
-  app.all('/', (req, res, next) => {
-    if (req.method === 'POST') {
-      req.url = '/graphql';
+  // Alias /graphql for clients assuming a nested path
+  app.use('/graphql', await expressMiddleware(server as any, {
+    context: async ({ req, res }: any) => {
+      try {
+        const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
+        return createGraphQLContext(req, res);
+      } catch (err) {
+        return { req, res };
+      }
     }
-    next();
-  });
+  }));
+
+  // GET root still returns info (middleware above handles POST already)
 }
 
 init().catch(err => {
