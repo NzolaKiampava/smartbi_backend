@@ -15,6 +15,15 @@ const server = new ApolloServer({
 // Initialize Express app and apply Apollo middleware
 const app = express();
 app.use(json());
+// Trust proxy in serverless environment
+app.set('trust proxy', true);
+
+// Minimal root route and favicon to reduce 404 noise
+app.get('/', (_req, res) => {
+  res.json({ success: true, message: 'GraphQL serverless function', graphql: '/graphql' });
+});
+
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
 // Lazy initialize Apollo and attach middleware
 async function init() {

@@ -32,6 +32,7 @@ async function startServer() {
         process.exit(1);
     }
     const app = (0, express_1.default)();
+    app.set('trust proxy', true);
     const httpServer = http_1.default.createServer(app);
     app.locals.supabase = supabase;
     app.use(security_middleware_1.helmetConfig);
