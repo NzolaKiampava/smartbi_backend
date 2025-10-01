@@ -44,8 +44,8 @@ async function startServer() {
   }
 
   const app = express();
-  // In a proxy environment (Vercel), trust proxy headers so rate-limiting and IP detection work
-  app.set('trust proxy', true);
+  // In a proxy environment (Vercel), trust the first proxy hop (safer than `true`)
+  app.set('trust proxy', 1);
   const httpServer = http.createServer(app);
 
   // Store Supabase client in app locals for access in resolvers

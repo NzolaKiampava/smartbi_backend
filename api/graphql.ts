@@ -15,8 +15,8 @@ const server = new ApolloServer({
 // Initialize Express app and apply Apollo middleware
 const app = express();
 app.use(json());
-// Trust proxy in serverless environment
-app.set('trust proxy', true);
+// Trust the first proxy hop (Vercel) to avoid permissive trust proxy error
+app.set('trust proxy', 1);
 
 // Minimal root route and favicon to reduce 404 noise
 app.get('/', (_req, res) => {
