@@ -19,7 +19,7 @@ app.use(json());
 // Lazy initialize Apollo and attach middleware
 async function init() {
   await server.start();
-  app.use('/api/graphql', await expressMiddleware(server, {
+  app.use('/', await expressMiddleware(server, {
     context: async ({ req, res }: any) => {
       try {
         const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
