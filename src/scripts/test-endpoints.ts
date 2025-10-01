@@ -69,7 +69,7 @@ async function testFileAnalysisEndpoints() {
       body: JSON.stringify(schemaQuery)
     });
 
-    const result = await response.json();
+  const result: any = await response.json();
     
     if (result.data?.__type?.name === 'FileUpload') {
       console.log('   ✅ FileUpload type is available');
@@ -103,7 +103,7 @@ async function testFileAnalysisEndpoints() {
       body: JSON.stringify(uploadQuery)
     });
 
-    const result = await response.json();
+  const result: any = await response.json();
     
     if (result.data?.__type?.name === 'Upload') {
       console.log('   ✅ Upload scalar is available');
@@ -144,7 +144,7 @@ async function testFileAnalysisEndpoints() {
       body: JSON.stringify(mutationQuery)
     });
 
-    const result = await response.json();
+  const result: any = await response.json();
     const mutations = result.data?.__type?.fields || [];
     const uploadMutation = mutations.find((m: any) => m.name === 'uploadAndAnalyzeFile');
     
