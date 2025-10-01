@@ -253,6 +253,16 @@ async function startServer() {
     next();
   });
 
+  // Root info route
+  app.get('/', (_req, res) => {
+    res.json({
+      success: true,
+      service: 'SmartBI Backend',
+      graphqlEndpoint: '/graphql',
+      health: '/health'
+    });
+  });
+
   // 404 handler
   app.use('*', (req, res) => {
     res.status(404).json({
