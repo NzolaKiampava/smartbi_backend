@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/uuid';
 import path from 'path';
 import fs from 'fs/promises';
 import { createReadStream, createWriteStream } from 'fs';
@@ -84,7 +84,7 @@ export class FileUploadService {
     }
     
     // Generate unique filename
-    const fileId = uuidv4();
+  const fileId = generateId();
     const ext = path.extname(filename);
     const newFilename = `${fileId}${ext}`;
     const filePath = path.join(this.uploadDir, newFilename);

@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/uuid';
 import {
   AnalysisReport,
   AnalysisStatus,
@@ -29,7 +29,7 @@ export class ReportGenerationService {
     fileUpload: FileUpload,
     options: AnalysisOptionsInput = {}
   ): Promise<AnalysisReport> {
-    const reportId = uuidv4();
+  const reportId = generateId();
     const startTime = Date.now();
 
     // Create initial report with PENDING status
@@ -84,7 +84,7 @@ export class ReportGenerationService {
 
       // Add basic error insight
       report.insights = [{
-        id: uuidv4(),
+        id: generateId(),
         reportId: report.id,
         type: InsightType.SUMMARY,
         title: 'Analysis Failed',
@@ -236,7 +236,7 @@ export class ReportGenerationService {
     // Convert AI insights
     aiResponse.insights.forEach(aiInsight => {
       insights.push({
-        id: uuidv4(),
+  id: generateId(),
         reportId,
         type: aiInsight.type,
         title: aiInsight.title,
@@ -254,7 +254,7 @@ export class ReportGenerationService {
 
     // Add file metadata insights
     insights.push({
-      id: uuidv4(),
+      id: generateId(),
       reportId,
       type: InsightType.SUMMARY,
       title: 'File Overview',
@@ -277,7 +277,7 @@ export class ReportGenerationService {
     if (fileData.tables && fileData.tables.length > 0) {
       fileData.tables.forEach((table, index) => {
         insights.push({
-          id: uuidv4(),
+    id: generateId(),
           reportId,
           type: InsightType.TABLE_STRUCTURE,
           title: `Table Structure${table.name ? `: ${table.name}` : ` ${index + 1}`}`,
@@ -312,7 +312,7 @@ export class ReportGenerationService {
     if (aiResponse.visualizations) {
       aiResponse.visualizations.forEach((viz, index) => {
         visualizations.push({
-          id: uuidv4(),
+          id: generateId(),
           type: viz.type,
           title: viz.title,
           description: viz.description,
@@ -334,7 +334,7 @@ export class ReportGenerationService {
           const columnStats = this.calculateColumnStats(table);
           
           visualizations.push({
-            id: uuidv4(),
+            id: generateId(),
             type: 'BAR',
             title: `Column Data Distribution${table.name ? ` - ${table.name}` : ` - Table ${tableIndex + 1}`}`,
             description: 'Distribution of data types across columns',
@@ -360,7 +360,7 @@ export class ReportGenerationService {
           }));
 
           visualizations.push({
-            id: uuidv4(),
+            id: generateId(),
             type: 'PIE',
             title: 'Data Distribution Across Tables',
             description: 'Relative size of each table by row count',
@@ -487,7 +487,7 @@ export class ReportGenerationService {
 
   async addCustomInsight(reportId: string, insightText: string): Promise<Insight> {
     const insight: Insight = {
-      id: uuidv4(),
+      id: generateId(),
       reportId,
       type: InsightType.BUSINESS_INSIGHT,
       title: 'Custom Insight',

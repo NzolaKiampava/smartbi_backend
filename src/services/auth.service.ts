@@ -2,7 +2,7 @@ import { supabase } from '../config/database';
 import { User, Company, LoginInput, RegisterInput, AuthTokens, UserRole, SubscriptionTier } from '../types/auth';
 import { JWTService } from '../utils/jwt';
 import { PasswordService } from '../utils/password';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/uuid';
 
 export class AuthService {
   static async login(input: LoginInput): Promise<{ user: User; company: Company; tokens: AuthTokens }> {
@@ -112,7 +112,7 @@ export class AuthService {
     const passwordHash = await PasswordService.hash(password);
 
     // Create company first
-    const companyId = uuidv4();
+  const companyId = generateId();
     const { data: companyData, error: companyError } = await supabase
       .from('companies')
       .insert({
@@ -131,7 +131,7 @@ export class AuthService {
     }
 
     // Create user as company admin
-    const userId = uuidv4();
+  const userId = generateId();
     const { data: userData, error: userError } = await supabase
       .from('users')
       .insert({

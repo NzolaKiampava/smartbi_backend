@@ -18,7 +18,7 @@ import { ReportGenerationService } from '../services/report-generation.service';
 import { FileAnalysisDatabaseService } from '../services/file-analysis-database.service';
 import { GeminiAIService } from '../services/gemini-ai.service';
 import { FileParserService } from '../services/file-parser.service';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/uuid';
 
 export class FileAnalysisResolvers {
   private fileUploadService: FileUploadService;
@@ -268,7 +268,7 @@ export class FileAnalysisResolvers {
           }
 
           const newInsight: Insight = {
-            id: uuidv4(),
+            id: generateId(),
             reportId,
             type: InsightType.BUSINESS_INSIGHT,
             title: 'Custom User Insight',

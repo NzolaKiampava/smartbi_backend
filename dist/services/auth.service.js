@@ -5,7 +5,7 @@ const database_1 = require("../config/database");
 const auth_1 = require("../types/auth");
 const jwt_1 = require("../utils/jwt");
 const password_1 = require("../utils/password");
-const uuid_1 = require("uuid");
+const uuid_1 = require("../utils/uuid");
 class AuthService {
     static async login(input) {
         const { email, password, companySlug } = input;
@@ -85,7 +85,7 @@ class AuthService {
             throw new Error('Company slug already taken');
         }
         const passwordHash = await password_1.PasswordService.hash(password);
-        const companyId = (0, uuid_1.v4)();
+        const companyId = (0, uuid_1.generateId)();
         const { data: companyData, error: companyError } = await database_1.supabase
             .from('companies')
             .insert({
@@ -101,7 +101,7 @@ class AuthService {
         if (companyError || !companyData) {
             throw new Error('Failed to create company');
         }
-        const userId = (0, uuid_1.v4)();
+        const userId = (0, uuid_1.generateId)();
         const { data: userData, error: userError } = await database_1.supabase
             .from('users')
             .insert({

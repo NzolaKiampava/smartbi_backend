@@ -11,7 +11,7 @@ import {
   AIDataQuality,
   DataQuality
 } from '../types/file-analysis';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/uuid';
 
 /**
  * Mock implementation of FileAnalysisDatabaseService for testing without database
@@ -38,7 +38,7 @@ export class FileAnalysisMockService {
     fileType: FileType,
     metadata: Record<string, any> = {}
   ): Promise<FileUpload> {
-    const id = uuidv4();
+  const id = generateId();
     const fileUpload: FileUpload = {
       id,
       filename,
@@ -65,7 +65,7 @@ export class FileAnalysisMockService {
     aiResponse: AIAnalysisResponse,
     executionTime?: number
   ): Promise<AnalysisReport> {
-    const reportId = uuidv4();
+  const reportId = generateId();
     const fileUpload = this.mockData.fileUploads.get(fileUploadId);
     
     if (!fileUpload) {
@@ -76,7 +76,7 @@ export class FileAnalysisMockService {
     
     // Convert AI insights to database format
     const insights: Insight[] = aiResponse.insights.map(aiInsight => ({
-      id: uuidv4(),
+  id: generateId(),
       reportId,
       type: aiInsight.type,
       title: aiInsight.title,
