@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createGraphQLContext = exports.requireRole = exports.requireAuth = exports.authMiddleware = void 0;
 const jwt_1 = require("../utils/jwt");
 const auth_service_1 = require("../services/auth.service");
+const supabase_js_1 = require("@supabase/supabase-js");
 const authMiddleware = async (req, res, next) => {
     try {
         const token = jwt_1.JWTService.extractTokenFromHeader(req.headers.authorization);
@@ -57,6 +58,24 @@ const requireRole = (roles) => {
 };
 exports.requireRole = requireRole;
 const createGraphQLContext = (req, res) => {
+    let supabaseClient = undefined;
+    try {
+        if (req && req.app && req.app.locals && req.app.locals.supabase) {
+            supabaseClient = req.app.locals.supabase;
+        }
+        else if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            supabaseClient = (0, supabase_js_1.createClient)(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+            try {
+                req.app = req.app || {};
+                req.app.locals = req.app.locals || {};
+                req.app.locals.supabase = supabaseClient;
+            }
+            catch (e) { }
+        }
+    }
+    catch (e) {
+        console.warn('Could not create supabase client in serverless context:', e);
+    }
     return {
         user: req.user,
         company: req.company,
