@@ -235,13 +235,23 @@ async function startServer() {
 
   await server.start();
 
-  // Apply GraphQL middleware
-  app.use(
-    '/graphql',
-    expressMiddleware(server, {
-      context: async ({ req, res }) => createGraphQLContext(req as any, res),
-    })
-  );
+  // Apply GraphQL middleware at /graphql
+  app.use('/graphql', expressMiddleware(server, {
+    context: async ({ req, res }) => createGraphQLContext(req as any, res),
+  }));
+
+  // Alias /api/graphql (some clients may default to this path in dev vs serverless)
+  app.use('/api/graphql', expressMiddleware(server, {
+    context: async ({ req, res }) => createGraphQLContext(req as any, res),
+  }));
+
+  // Forward root POST to /graphql for convenience
+  app.all('/', (req, _res, next) => {
+    if (req.method === 'POST') {
+      req.url = '/graphql';
+    }
+    next();
+  });
 
   // 404 handler
   app.use('*', (req, res) => {

@@ -25,10 +25,10 @@ app.get('/', (_req, res) => {
 
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
-// Lazy initialize Apollo and attach middleware
+// Lazy initialize Apollo and attach middleware just for /graphql
 async function init() {
   await server.start();
-  app.use('/', await expressMiddleware(server as any, {
+  app.use('/graphql', await expressMiddleware(server as any, {
     context: async ({ req, res }: any) => {
       try {
         const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
@@ -39,6 +39,14 @@ async function init() {
       }
     }
   }));
+
+  // Convenience: POSTing to root forwards to /graphql (some clients may call /api/graphql directly)
+  app.all('/', (req, res, next) => {
+    if (req.method === 'POST') {
+      req.url = '/graphql';
+    }
+    next();
+  });
 }
 
 init().catch(err => {
