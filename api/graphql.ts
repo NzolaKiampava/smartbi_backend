@@ -1,10 +1,23 @@
 import { ApolloServer } from '@apollo/server';
 import { typeDefs } from '../src/schema';
 import { resolvers } from '../src/resolvers';
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+// Simple types for Vercel runtime
+interface VercelRequest {
+  method?: string;
+  url?: string;
+  headers: Record<string, string | string[] | undefined>;
+  body?: any;
+}
+
+interface VercelResponse {
+  writeHead(statusCode: number, headers?: Record<string, string>): void;
+  end(data?: string): void;
+  setHeader(name: string, value: string): void;
+}
 
 // Singleton Apollo instance (lazy)
-let apollo: ApolloServer | undefined;
+let apollo: any;
 async function getApollo() {
   if (!apollo) {
     apollo = new ApolloServer({
@@ -20,67 +33,77 @@ async function getApollo() {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Health / info shortcuts
   if (req.method === 'GET' && (!req.url || req.url === '/' || req.url.startsWith('/?'))) {
-    res.status(200).json({
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
       success: true,
       message: 'SmartBI GraphQL endpoint',
       usage: 'POST this same URL with { query, variables }',
       exampleQuery: '{ __typename }'
-    });
+    }));
     return;
   }
 
   if (req.method === 'GET' && req.url === '/favicon.ico') {
-    res.status(204).end();
+    res.writeHead(204);
+    res.end();
     return;
   }
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST, GET');
-    res.status(405).json({ success: false, message: 'Method not allowed' });
+    res.writeHead(405, { 'Allow': 'POST, GET', 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));
     return;
   }
 
   try {
     const server = await getApollo();
 
-    // Parse JSON body (Vercel already buffers)
-    let body: any = req.body;
-    if (!body) {
-      try { body = JSON.parse((req as any).rawBody?.toString() || '{}'); } catch { body = {}; }
-    }
-
-    const { query, variables, operationName } = body || {};
+    // Parse body - Vercel provides it parsed
+    const { query, variables, operationName } = req.body || {};
     if (!query) {
-      res.status(400).json({ success: false, message: 'Missing GraphQL "query" field' });
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'Missing GraphQL "query" field' }));
       return;
     }
 
-    // Dynamic context
-    let contextValue: any = { req, res };
-    try {
-      const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
-      contextValue = await createGraphQLContext(req as any, res as any);
-    } catch (err) {
-      console.warn('Context creation failed, continuing with basic context:', err);
-    }
+    // Basic context (avoid complex middleware for now)
+    const contextValue = { req, res };
 
     const httpGraphQLResponse = await server.executeHTTPGraphQLRequest({
       context: async () => contextValue,
       httpGraphQLRequest: {
         method: req.method || 'POST',
-        headers: new Map(Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : (v || '')])),
+        headers: new Map(Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v || '')])) as any,
+        search: req.url?.includes('?') ? req.url.substring(req.url.indexOf('?')) : '',
         body: { kind: 'single', query, variables, operationName }
       }
     });
 
     // Set response headers
     for (const [key, value] of httpGraphQLResponse.headers) {
-      res.setHeader(key, value as string);
+      res.setHeader(key, String(value));
     }
 
-    res.status(httpGraphQLResponse.status || 200).send(httpGraphQLResponse.body.string);
+    // Handle response body
+    let responseString = '';
+    if (httpGraphQLResponse.body.kind === 'complete') {
+      responseString = (httpGraphQLResponse.body as any).string;
+    } else {
+      // chunked response - collect all chunks
+      for await (const chunk of httpGraphQLResponse.body.asyncIterator) {
+        responseString += chunk;
+      }
+    }
+
+    res.writeHead(httpGraphQLResponse.status || 200);
+    res.end(responseString);
   } catch (error: any) {
     console.error('GraphQL handler error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error', error: process.env.NODE_ENV === 'development' ? error?.message : undefined });
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ 
+      success: false, 
+      message: 'Internal server error', 
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined 
+    }));
   }
 }
