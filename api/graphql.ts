@@ -58,8 +58,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const server = await getApollo();
 
-    // Parse body - Vercel provides it parsed
-    const { query, variables, operationName } = req.body || {};
+    // Parse body - fallback to manual read if not already parsed
+    let parsedBody: any = req.body;
+    if (!parsedBody) {
+      try {
+        const chunks: Buffer[] = [];
+        const nodeReq = req as any;
+        await new Promise<void>((resolve) => {
+          nodeReq.on('data', (c: Buffer) => chunks.push(c));
+          nodeReq.on('end', () => resolve());
+          nodeReq.on('error', () => resolve());
+        });
+        const raw = Buffer.concat(chunks).toString('utf8');
+        if (raw) parsedBody = JSON.parse(raw);
+      } catch {}
+    }
+    const { query, variables, operationName } = parsedBody || {};
     if (!query) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: false, message: 'Missing GraphQL "query" field' }));
