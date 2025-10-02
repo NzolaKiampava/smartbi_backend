@@ -61,30 +61,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const server = await getApollo();
 
-    // Parse body - fallback to manual read if not already parsed
-    let parsedBody: any = req.body;
-    if (!parsedBody) {
-      try {
-        const chunks: Buffer[] = [];
-        const nodeReq = req as any;
-        await new Promise<void>((resolve) => {
-          nodeReq.on('data', (c: Buffer) => chunks.push(c));
-          nodeReq.on('end', () => resolve());
-          nodeReq.on('error', () => resolve());
-        });
-        const raw = Buffer.concat(chunks).toString('utf8');
-        if (raw) parsedBody = JSON.parse(raw);
-      } catch {}
-    }
-    const { query, variables, operationName } = parsedBody || {};
+    // Parse body - Vercel already parses it
+    const parsedBody = req.body || {};
+    const { query, variables, operationName } = parsedBody;
     if (!query) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: false, message: 'Missing GraphQL "query" field' }));
       return;
     }
 
-    // Basic context (avoid complex middleware for now)
-    const contextValue = { req, res };
+    // Create proper context with Supabase client
+    let contextValue: any = { req, res };
+    try {
+      // Try to create GraphQL context with Supabase
+      const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
+      contextValue = await createGraphQLContext(req as any, res as any);
+    } catch (err) {
+      console.warn('Could not create full GraphQL context, using basic context:', err);
+      
+      // Fallback: create Supabase client directly
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL!,
+          process.env.SUPABASE_ANON_KEY!
+        );
+        
+        // Mock req.app.locals structure for compatibility
+        contextValue = {
+          req: {
+            ...req,
+            app: {
+              locals: {
+                supabase
+              }
+            }
+          },
+          res
+        };
+      } catch (supabaseErr) {
+        console.error('Failed to create Supabase client:', supabaseErr);
+      }
+    }
 
     // Build request body - only include operationName if it's a non-empty string
     const requestBody: any = { 
