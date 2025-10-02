@@ -81,16 +81,14 @@ export const dataQueryResolvers = {
       return await service.getAIQuery(user.companyId, id);
     },
 
-    // Get connections without authentication (development only)
+    // Get connections without authentication (for testing purposes)
     getDataConnectionsPublic: async (
       _: any, 
       __: any, 
       context: GraphQLContext
     ): Promise<DataConnection[]> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: getDataConnectionsPublic');
 
       try {
         // Get all connections from Demo Company
@@ -132,16 +130,14 @@ export const dataQueryResolvers = {
       }
     },
 
-    // Get AI query history without authentication (development only)
+    // Get AI query history without authentication (for testing purposes)
     getAIQueryHistoryPublic: async (
       _: any,
       { limit }: { limit?: number },
       context: GraphQLContext
     ): Promise<AIQueryResult[]> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: getAIQueryHistoryPublic');
 
       try {
         // Get Demo Company
@@ -188,16 +184,14 @@ export const dataQueryResolvers = {
       }
     },
 
-    // Get specific AI query without authentication (development only)
+    // Get specific AI query without authentication (for testing purposes)
     getAIQueryPublic: async (
       _: any,
       { id }: { id: string },
       context: GraphQLContext
     ): Promise<AIQueryResult | null> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: getAIQueryPublic');
 
       try {
         const { data: query, error: queryError } = await context.req.app.locals.supabase
@@ -296,15 +290,13 @@ export const dataQueryResolvers = {
       return await service.testConnection(input);
     },
 
-    // Temporary resolver for testing without authentication (development only)
+    // Temporary resolver for testing without authentication (for testing purposes)
     testConnectionPublic: async (
       _: any, 
       { input }: { input: ConnectionTestInput }
     ): Promise<ConnectionTestResult> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: testConnectionPublic');
 
       try {
         const adapter = createDatabaseAdapter(input.type);
@@ -350,16 +342,14 @@ export const dataQueryResolvers = {
       }
     },
 
-    // Create connection without authentication (development only)
+    // Create connection without authentication (for testing purposes)
     createDataConnectionPublic: async (
       _: any,
       { input }: { input: DataConnectionInput },
       context: GraphQLContext
     ): Promise<DataConnection> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: createDataConnectionPublic');
 
       try {
         // Get Demo Company ID from database
@@ -429,16 +419,14 @@ export const dataQueryResolvers = {
         throw new Error(`Failed to create connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     },
-    // Delete connection without authentication (development only)
+    // Delete connection without authentication (for testing purposes)
     deleteDataConnectionPublic: async (
       _: any,
       { id }: { id: string },
       context: GraphQLContext
     ): Promise<boolean> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: deleteDataConnectionPublic');
 
       try {
         const supabase = context.req.app.locals.supabase;
@@ -479,10 +467,8 @@ export const dataQueryResolvers = {
       { input }: { input: AIQueryInput }, 
       context: GraphQLContext
     ): Promise<AIQueryResult> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: executeAIQueryPublic');
 
       try {
         // Use the fixed Demo Company ID that you provided
@@ -506,16 +492,14 @@ export const dataQueryResolvers = {
       }
     },
 
-    // Delete single AI query without authentication (development only)
+    // Delete single AI query without authentication (for testing purposes)
     deleteAIQueryPublic: async (
       _: any,
       { id }: { id: string },
       context: GraphQLContext
     ): Promise<boolean> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: deleteAIQueryPublic');
 
       try {
         const { error } = await context.req.app.locals.supabase
@@ -533,16 +517,14 @@ export const dataQueryResolvers = {
       }
     },
 
-    // Delete multiple AI queries without authentication (development only)
+    // Delete multiple AI queries without authentication (for testing purposes)
     deleteMultipleAIQueriesPublic: async (
       _: any,
       { ids }: { ids: string[] },
       context: GraphQLContext
     ): Promise<{ deletedCount: number; errors: string[] }> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: deleteMultipleAIQueriesPublic');
 
       try {
         const { error, count } = await context.req.app.locals.supabase
@@ -566,16 +548,14 @@ export const dataQueryResolvers = {
       }
     },
 
-    // Delete all AI query history without authentication (development only)
+    // Delete all AI query history without authentication (for testing purposes)
     clearAIQueryHistoryPublic: async (
       _: any,
       __: any,
       context: GraphQLContext
     ): Promise<{ deletedCount: number; message: string }> => {
-      // Only available in development mode
-      if (process.env.NODE_ENV !== 'development') {
-        throw new Error('This endpoint is only available in development mode');
-      }
+      // Note: This is a public endpoint for testing purposes
+      console.log('Public endpoint accessed: clearAIQueryHistoryPublic');
 
       try {
         // Get Demo Company ID
