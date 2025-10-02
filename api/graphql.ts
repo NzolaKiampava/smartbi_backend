@@ -89,7 +89,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         method: req.method || 'POST',
         headers: new Map(Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v || '')])) as any,
         search: req.url?.includes('?') ? req.url.substring(req.url.indexOf('?')) : '',
-        body: { kind: 'single', query, variables, operationName }
+        body: { 
+          kind: 'single', 
+          query, 
+          variables: variables || {}, 
+          operationName: operationName || undefined 
+        }
       }
     });
 
