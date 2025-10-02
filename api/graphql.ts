@@ -32,26 +32,29 @@ async function getApollo() {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Health / info shortcuts
-  if (req.method === 'GET' && (!req.url || req.url === '/' || req.url.startsWith('/?'))) {
+  if (req.method === 'GET') {
+    if (req.url === '/favicon.ico') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    
+    // GET returns GraphQL endpoint info
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: true,
       message: 'SmartBI GraphQL endpoint',
       usage: 'POST this same URL with { query, variables }',
-      exampleQuery: '{ __typename }'
+      exampleQuery: '{ __typename }',
+      playground: 'Use Postman or GraphQL client',
+      introspection: 'Send POST with query: "{ __schema { queryType { name } } }"'
     }));
-    return;
-  }
-
-  if (req.method === 'GET' && req.url === '/favicon.ico') {
-    res.writeHead(204);
-    res.end();
     return;
   }
 
   if (req.method !== 'POST') {
     res.writeHead(405, { 'Allow': 'POST, GET', 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));
+    res.end(JSON.stringify({ success: false, message: 'Method not allowed. Use POST for GraphQL queries.' }));
     return;
   }
 
@@ -83,18 +86,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Basic context (avoid complex middleware for now)
     const contextValue = { req, res };
 
+    // Build request body - only include operationName if it's a non-empty string
+    const requestBody: any = { 
+      kind: 'single', 
+      query, 
+      variables: variables || {} 
+    };
+    
+    if (operationName && typeof operationName === 'string' && operationName.trim()) {
+      requestBody.operationName = operationName;
+    }
+
     const httpGraphQLResponse = await server.executeHTTPGraphQLRequest({
       context: async () => contextValue,
       httpGraphQLRequest: {
         method: req.method || 'POST',
         headers: new Map(Object.entries(req.headers).map(([k, v]) => [k, Array.isArray(v) ? v.join(',') : String(v || '')])) as any,
         search: req.url?.includes('?') ? req.url.substring(req.url.indexOf('?')) : '',
-        body: { 
-          kind: 'single', 
-          query, 
-          variables: variables || {}, 
-          operationName: operationName || undefined 
-        }
+        body: requestBody
       }
     });
 
