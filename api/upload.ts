@@ -175,9 +175,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .getPublicUrl(uniqueFileName);
 
     // Save file metadata to database
-    // Note: Using table name 'file-uploads' (with hyphen) as per existing schema
+    // Note: Table name is 'file_uploads' (with underscore)
     const { data: fileRecord, error: dbError } = await supabase
-      .from('file-uploads')
+      .from('file_uploads')  // Use underscore, not hyphen
       .insert({
         original_name: fileName,
         mimetype: mimeType || 'application/octet-stream',

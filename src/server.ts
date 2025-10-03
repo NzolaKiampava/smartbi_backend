@@ -227,10 +227,39 @@ async function startServer() {
       // Decode base64 file content
       const buffer = Buffer.from(fileContent, 'base64');
 
-      // Generate unique filename
+      // Generate unique filename - sanitize to remove special characters
       const timestamp = Date.now();
-      const fileExt = fileName.split('.').pop();
-      const uniqueFileName = `${timestamp}-${fileName}`;
+      const fileExt = fileName.split('.').pop()?.toLowerCase() || 'unknown';
+      
+      // Sanitize filename: remove accents, spaces, and special characters
+      const sanitizedName = fileName
+        .normalize('NFD') // Decompose accented characters
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars with underscore
+        .replace(/_{2,}/g, '_'); // Replace multiple underscores with single
+      
+      const uniqueFileName = `${timestamp}-${sanitizedName}`;
+      
+      // Map file extension to FileType enum values
+      const fileTypeMap: Record<string, string> = {
+        'csv': 'CSV',
+        'xlsx': 'EXCEL',
+        'xls': 'EXCEL',
+        'pdf': 'PDF',
+        'sql': 'SQL',
+        'json': 'JSON',
+        'txt': 'TXT',
+        'xml': 'XML'
+      };
+      
+      const fileType = fileTypeMap[fileExt] || 'OTHER';
+      
+      console.log(`📋 File processing:`, {
+        fileName,
+        fileExt,
+        fileType,
+        uniqueFileName
+      });
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -256,15 +285,18 @@ async function startServer() {
 
       // Save file metadata to database
       const { data: fileRecord, error: dbError } = await supabase
-        .from('file_uploads')
+        .from('file_uploads')  // Use underscore, not hyphen
         .insert({
-          filename: uniqueFileName,
           original_name: fileName,
           mimetype: mimeType || 'application/octet-stream',
+          encoding: 'base64',
           size: buffer.length,
           path: urlData.publicUrl,
-          file_type: fileExt || 'unknown',
-          metadata: {}
+          file_type: fileType, // Use mapped enum value (CSV, EXCEL, PDF, etc.)
+          metadata: {
+            sanitized_filename: uniqueFileName,
+            upload_timestamp: timestamp
+          }
         })
         .select()
         .single();
