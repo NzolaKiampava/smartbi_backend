@@ -7,6 +7,7 @@ interface VercelRequest {
 interface VercelResponse {
   writeHead(statusCode: number, headers?: Record<string, string>): void;
   end(data?: string): void;
+  setHeader(name: string, value: string): void;
 }
 
 export default function handler(_req: VercelRequest, res: VercelResponse) {
