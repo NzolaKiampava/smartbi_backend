@@ -225,6 +225,7 @@ export const fileAnalysisTypeDefs = gql`
   type Mutation {
     # File Upload and Analysis
     uploadAndAnalyzeFile(input: FileUploadInput!): AnalysisReport!
+    analyzeUploadedFile(fileId: ID!, options: AnalysisOptionsInput): AnalysisReport!
     
     # Manual Analysis Triggers
     reanalyzeFile(fileId: ID!, options: AnalysisOptionsInput): AnalysisReport!

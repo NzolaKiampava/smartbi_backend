@@ -212,6 +212,93 @@ async function startServer() {
     });
   });
 
+  // File upload endpoint (mimics Vercel's /api/upload)
+  app.post('/api/upload', express.json({ limit: '50mb' }), async (req, res) => {
+    try {
+      const { fileContent, fileName, mimeType, analysisOptions } = req.body;
+
+      if (!fileContent || !fileName) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Missing required fields: fileContent, fileName' 
+        });
+      }
+
+      // Decode base64 file content
+      const buffer = Buffer.from(fileContent, 'base64');
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const fileExt = fileName.split('.').pop();
+      const uniqueFileName = `${timestamp}-${fileName}`;
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('file-uploads')
+        .upload(uniqueFileName, buffer, {
+          contentType: mimeType || 'application/octet-stream',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Supabase upload error:', uploadError);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'File upload to storage failed',
+          error: uploadError.message 
+        });
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('file-uploads')
+        .getPublicUrl(uniqueFileName);
+
+      // Save file metadata to database
+      const { data: fileRecord, error: dbError } = await supabase
+        .from('file_uploads')
+        .insert({
+          filename: uniqueFileName,
+          original_name: fileName,
+          mimetype: mimeType || 'application/octet-stream',
+          size: buffer.length,
+          path: urlData.publicUrl,
+          file_type: fileExt || 'unknown',
+          metadata: {}
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Database insert error:', dbError);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Failed to save file metadata',
+          error: dbError.message 
+        });
+      }
+
+      // Return success response
+      return res.status(200).json({
+        success: true,
+        fileId: fileRecord.id,
+        fileName: uniqueFileName,
+        originalName: fileName,
+        size: buffer.length,
+        url: urlData.publicUrl,
+        message: 'File uploaded successfully. Use fileId with GraphQL analyzeUploadedFile mutation.'
+      });
+
+    } catch (error: any) {
+      console.error('Upload handler error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Internal server error',
+        error: config.isDevelopment ? error?.message : undefined 
+      });
+    }
+  });
+
   // Create Apollo Server
   const server = new ApolloServer({
     typeDefs,

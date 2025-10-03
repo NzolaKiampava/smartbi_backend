@@ -173,6 +173,43 @@ export class FileAnalysisResolvers {
           }
         },
 
+        analyzeUploadedFile: async (_: any, { fileId, options }: { fileId: string; options?: AnalysisOptionsInput }) => {
+          try {
+            console.log('Starting analysis for uploaded file:', fileId);
+
+            // Get file from database
+            const fileUpload = await this.databaseService.getFileUpload(fileId);
+            if (!fileUpload) {
+              throw new GraphQLError('File upload not found');
+            }
+
+            // Perform AI analysis with Gemini
+            console.log('🤖 Starting AI analysis with Gemini...');
+            const aiAnalysis = await this.geminiAIService.analyzeFile(
+              fileUpload,
+              options || {}
+            );
+            console.log('AI analysis completed:', { 
+              insightCount: aiAnalysis.insights.length,
+              qualityScore: aiAnalysis.dataQuality?.overallScore || 0
+            });
+
+            // Save analysis report
+            const analysisReport = await this.databaseService.saveAnalysisReport(
+              fileId,
+              aiAnalysis,
+              undefined // executionTime
+            );
+
+            console.log('Analysis completed and saved:', analysisReport.id);
+            return analysisReport;
+
+          } catch (error) {
+            console.error('File analysis failed:', error);
+            throw new GraphQLError(`File analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        },
+
         reanalyzeFile: async (_: any, { fileId, options }: { fileId: string; options?: AnalysisOptionsInput }) => {
           const fileUpload = await this.databaseService.getFileUpload(fileId);
           if (!fileUpload) {
