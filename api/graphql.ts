@@ -31,6 +31,34 @@ async function getApollo() {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Configure CORS headers
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://smartbi-frontend.vercel.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean);
+
+  const origin = req.headers.origin as string;
+  if (allowedOrigins.includes(origin) || origin?.includes('localhost')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Fallback for development
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   // Health / info shortcuts
   if (req.method === 'GET') {
     if (req.url === '/favicon.ico') {
