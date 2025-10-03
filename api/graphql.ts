@@ -99,12 +99,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    // Create proper context with Supabase client
-    let contextValue: any = { req, res };
+    // Process authentication before creating context
+    let authenticatedReq: any = { ...req, headers: req.headers };
+    
+    try {
+      // Extract and verify JWT token
+      const { JWTService } = await import('../src/utils/jwt');
+      const { AuthService } = await import('../src/services/auth.service');
+      
+      const authHeader = req.headers.authorization || req.headers.Authorization;
+      const token = JWTService.extractTokenFromHeader(authHeader as string);
+      
+      if (token) {
+        const payload = JWTService.verifyAccessToken(token);
+        if (payload && payload.userId) {
+          const result = await AuthService.getUserById(payload.userId);
+          if (result) {
+            authenticatedReq.user = result.user;
+            authenticatedReq.company = result.company;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Authentication failed:', err);
+      // Continue without authentication
+    }
+
+    // Create proper context with authenticated user
+    let contextValue: any = { req: authenticatedReq, res };
     try {
       // Try to create GraphQL context with Supabase
       const { createGraphQLContext } = await import('../src/middleware/auth.middleware');
-      contextValue = await createGraphQLContext(req as any, res as any);
+      contextValue = await createGraphQLContext(authenticatedReq, res as any);
     } catch (err) {
       console.warn('Could not create full GraphQL context, using basic context:', err);
       
@@ -116,17 +142,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           process.env.SUPABASE_ANON_KEY!
         );
         
-        // Mock req.app.locals structure for compatibility
+        // Create context with authenticated user
         contextValue = {
-          req: {
-            ...req,
-            app: {
-              locals: {
-                supabase
-              }
-            }
-          },
-          res
+          req: authenticatedReq,
+          res,
+          user: authenticatedReq.user,
+          company: authenticatedReq.company,
+          isAuthenticated: !!authenticatedReq.user
         };
       } catch (supabaseErr) {
         console.error('Failed to create Supabase client:', supabaseErr);
