@@ -37,6 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'http://localhost:5173',
     'http://localhost:5174',
     'https://smartbi-frontend.vercel.app',
+    'https://smartbi-rcs.vercel.app',  // Add your production frontend
     process.env.FRONTEND_URL
   ].filter(Boolean);
 
