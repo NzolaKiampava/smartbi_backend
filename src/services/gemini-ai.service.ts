@@ -70,7 +70,47 @@ export class GeminiAIService {
   private async parseFileContent(fileUpload: FileUpload): Promise<ParsedData> {
     const { FileParserService } = await import('./file-parser.service');
     const parser = new FileParserService();
-    return parser.parseFile(fileUpload.path, fileUpload.fileType, fileUpload.originalName);
+    
+    // Check if path is a URL (Supabase Storage) or local file path
+    const isUrl = fileUpload.path.startsWith('http://') || fileUpload.path.startsWith('https://');
+    
+    if (isUrl) {
+      // Download file from Supabase and save to temp location
+      const fs = await import('fs');
+      const path = await import('path');
+      const os = await import('os');
+      
+      const response = await fetch(fileUpload.path);
+      if (!response.ok) {
+        throw new Error(`Failed to download file from ${fileUpload.path}: ${response.statusText}`);
+      }
+      
+      const buffer = Buffer.from(await response.arrayBuffer());
+      
+      // Save to temp directory
+      const tempDir = path.join(os.tmpdir(), 'smartbi_analysis');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      
+      const tempFilePath = path.join(tempDir, fileUpload.filename || fileUpload.originalName);
+      fs.writeFileSync(tempFilePath, buffer);
+      
+      // Parse the downloaded file
+      const result = await parser.parseFile(tempFilePath, fileUpload.fileType, fileUpload.originalName);
+      
+      // Clean up temp file
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (err) {
+        console.warn('Failed to delete temp file:', err);
+      }
+      
+      return result;
+    } else {
+      // Local file path - parse directly
+      return parser.parseFile(fileUpload.path, fileUpload.fileType, fileUpload.originalName);
+    }
   }
 
   /**

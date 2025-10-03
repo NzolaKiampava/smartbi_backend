@@ -287,6 +287,7 @@ async function startServer() {
       const { data: fileRecord, error: dbError } = await supabase
         .from('file_uploads')  // Use underscore, not hyphen
         .insert({
+          filename: uniqueFileName,  // Sanitized filename with timestamp
           original_name: fileName,
           mimetype: mimeType || 'application/octet-stream',
           encoding: 'base64',
