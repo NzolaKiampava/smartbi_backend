@@ -163,6 +163,102 @@ async function startServer() {
             environment: environment_1.config.env,
         });
     });
+    app.post('/api/upload', express_1.default.json({ limit: '50mb' }), async (req, res) => {
+        try {
+            const { fileContent, fileName, mimeType, analysisOptions } = req.body;
+            if (!fileContent || !fileName) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Missing required fields: fileContent, fileName'
+                });
+            }
+            const buffer = Buffer.from(fileContent, 'base64');
+            const timestamp = Date.now();
+            const fileExt = fileName.split('.').pop()?.toLowerCase() || 'unknown';
+            const sanitizedName = fileName
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-zA-Z0-9._-]/g, '_')
+                .replace(/_{2,}/g, '_');
+            const uniqueFileName = `${timestamp}-${sanitizedName}`;
+            const fileTypeMap = {
+                'csv': 'CSV',
+                'xlsx': 'EXCEL',
+                'xls': 'EXCEL',
+                'pdf': 'PDF',
+                'sql': 'SQL',
+                'json': 'JSON',
+                'txt': 'TXT',
+                'xml': 'XML'
+            };
+            const fileType = fileTypeMap[fileExt] || 'OTHER';
+            console.log(`📋 File processing:`, {
+                fileName,
+                fileExt,
+                fileType,
+                uniqueFileName
+            });
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('file-uploads')
+                .upload(uniqueFileName, buffer, {
+                contentType: mimeType || 'application/octet-stream',
+                upsert: false
+            });
+            if (uploadError) {
+                console.error('Supabase upload error:', uploadError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'File upload to storage failed',
+                    error: uploadError.message
+                });
+            }
+            const { data: urlData } = supabase.storage
+                .from('file-uploads')
+                .getPublicUrl(uniqueFileName);
+            const { data: fileRecord, error: dbError } = await supabase
+                .from('file_uploads')
+                .insert({
+                filename: uniqueFileName,
+                original_name: fileName,
+                mimetype: mimeType || 'application/octet-stream',
+                encoding: 'base64',
+                size: buffer.length,
+                path: urlData.publicUrl,
+                file_type: fileType,
+                metadata: {
+                    sanitized_filename: uniqueFileName,
+                    upload_timestamp: timestamp
+                }
+            })
+                .select()
+                .single();
+            if (dbError) {
+                console.error('Database insert error:', dbError);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Failed to save file metadata',
+                    error: dbError.message
+                });
+            }
+            return res.status(200).json({
+                success: true,
+                fileId: fileRecord.id,
+                fileName: uniqueFileName,
+                originalName: fileName,
+                size: buffer.length,
+                url: urlData.publicUrl,
+                message: 'File uploaded successfully. Use fileId with GraphQL analyzeUploadedFile mutation.'
+            });
+        }
+        catch (error) {
+            console.error('Upload handler error:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Internal server error',
+                error: environment_1.config.isDevelopment ? error?.message : undefined
+            });
+        }
+    });
     const server = new server_1.ApolloServer({
         typeDefs: schema_1.typeDefs,
         resolvers: resolvers_1.resolvers,

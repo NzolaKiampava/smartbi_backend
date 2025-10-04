@@ -29,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'http://localhost:5173',
     'http://localhost:5174',
     'https://smartbi-frontend.vercel.app',
-    'https://smartbi-rcs.vercel.app',  // Add your production frontend
+    'https://smartbi-rcs.vercel.app',
     process.env.FRONTEND_URL
   ].filter(Boolean);
 
@@ -87,16 +87,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Use existing bucket (created manually in Supabase)
     const BUCKET_NAME = 'file-uploads';
     console.log(`Using existing bucket: ${BUCKET_NAME}`);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-          success: false, 
-          message: 'Storage bucket setup failed. Please create "file-uploads" bucket manually in Supabase Dashboard.',
-          error: createError.message 
-        }));
-        return;
-      }
-      console.log(`Bucket '${BUCKET_NAME}' created successfully`);
-    }
 
     // Generate unique filename - sanitize to remove special characters
     const timestamp = Date.now();
@@ -104,10 +94,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // Sanitize filename: remove accents, spaces, and special characters
     const sanitizedName = fileName
-      .normalize('NFD') // Decompose accented characters
-      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-      .replace(/[^a-zA-Z0-9._-]/g, '_') // Replace special chars with underscore
-      .replace(/_{2,}/g, '_'); // Replace multiple underscores with single
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_')
+      .replace(/_{2,}/g, '_');
     
     const uniqueFileName = `${timestamp}-${sanitizedName}`;
     
@@ -159,14 +149,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Save file metadata to database
     // Note: Table name is 'file_uploads' (with underscore)
     const { data: fileRecord, error: dbError } = await supabase
-      .from('file_uploads')  // Use underscore, not hyphen
+      .from('file_uploads')
       .insert({
+        filename: uniqueFileName,
         original_name: fileName,
         mimetype: mimeType || 'application/octet-stream',
         encoding: 'base64',
         size: buffer.length,
         path: urlData.publicUrl,
-        file_type: fileType, // Use mapped enum value (CSV, EXCEL, PDF, etc.)
+        file_type: fileType,
         metadata: {
           sanitized_filename: uniqueFileName,
           upload_timestamp: timestamp

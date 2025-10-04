@@ -176,6 +176,10 @@ export declare const resolvers: {
         uploadAndAnalyzeFile: (_: any, { input }: {
             input: import("../types/file-analysis").FileUploadInput;
         }) => Promise<import("../types/file-analysis").AnalysisReport>;
+        analyzeUploadedFile: (_: any, { fileId, options }: {
+            fileId: string;
+            options?: import("../types/file-analysis").AnalysisOptionsInput;
+        }) => Promise<import("../types/file-analysis").AnalysisReport>;
         reanalyzeFile: (_: any, { fileId, options }: {
             fileId: string;
             options?: import("../types/file-analysis").AnalysisOptionsInput;

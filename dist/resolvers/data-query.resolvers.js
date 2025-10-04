@@ -55,9 +55,7 @@ exports.dataQueryResolvers = {
             return await service.getAIQuery(user.companyId, id);
         },
         getDataConnectionsPublic: async (_, __, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: getDataConnectionsPublic');
             try {
                 const { data: companies, error: companyError } = await context.req.app.locals.supabase
                     .from('companies')
@@ -93,9 +91,7 @@ exports.dataQueryResolvers = {
             }
         },
         getAIQueryHistoryPublic: async (_, { limit }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: getAIQueryHistoryPublic');
             try {
                 const { data: companies, error: companyError } = await context.req.app.locals.supabase
                     .from('companies')
@@ -135,9 +131,7 @@ exports.dataQueryResolvers = {
             }
         },
         getAIQueryPublic: async (_, { id }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: getAIQueryPublic');
             try {
                 const { data: query, error: queryError } = await context.req.app.locals.supabase
                     .from('ai_query_history')
@@ -202,9 +196,7 @@ exports.dataQueryResolvers = {
             return await service.testConnection(input);
         },
         testConnectionPublic: async (_, { input }) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: testConnectionPublic');
             try {
                 const adapter = (0, database_adapters_service_1.createDatabaseAdapter)(input.type);
                 const config = {
@@ -245,9 +237,7 @@ exports.dataQueryResolvers = {
             }
         },
         createDataConnectionPublic: async (_, { input }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: createDataConnectionPublic');
             try {
                 const { data: companies, error: companyError } = await context.req.app.locals.supabase
                     .from('companies')
@@ -305,9 +295,7 @@ exports.dataQueryResolvers = {
             }
         },
         deleteDataConnectionPublic: async (_, { id }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: deleteDataConnectionPublic');
             try {
                 const supabase = context.req.app.locals.supabase;
                 const { data: companies, error: companyError } = await supabase
@@ -331,9 +319,7 @@ exports.dataQueryResolvers = {
             return await service.executeAIQuery(user.companyId, user.id, input);
         },
         executeAIQueryPublic: async (_, { input }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: executeAIQueryPublic');
             try {
                 const demoCompanyId = 'f21b31ec-6487-413a-99f7-3a6a1a34b171';
                 const { data: users, error: userError } = await context.req.app.locals.supabase
@@ -351,9 +337,7 @@ exports.dataQueryResolvers = {
             }
         },
         deleteAIQueryPublic: async (_, { id }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: deleteAIQueryPublic');
             try {
                 const { error } = await context.req.app.locals.supabase
                     .from('ai_query_history')
@@ -369,9 +353,7 @@ exports.dataQueryResolvers = {
             }
         },
         deleteMultipleAIQueriesPublic: async (_, { ids }, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: deleteMultipleAIQueriesPublic');
             try {
                 const { error, count } = await context.req.app.locals.supabase
                     .from('ai_query_history')
@@ -393,9 +375,7 @@ exports.dataQueryResolvers = {
             }
         },
         clearAIQueryHistoryPublic: async (_, __, context) => {
-            if (process.env.NODE_ENV !== 'development') {
-                throw new Error('This endpoint is only available in development mode');
-            }
+            console.log('Public endpoint accessed: clearAIQueryHistoryPublic');
             try {
                 const demoCompanyId = 'f21b31ec-6487-413a-99f7-3a6a1a34b171';
                 const { error, count } = await context.req.app.locals.supabase
