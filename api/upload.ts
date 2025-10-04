@@ -75,37 +75,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Decode base64 file content
     const buffer = Buffer.from(fileContent, 'base64');
 
-    // Initialize Supabase client
+    // Initialize Supabase client with SERVICE ROLE KEY for admin operations
+    // Note: Service role key bypasses RLS policies for file uploads
+    // Bucket 'file-uploads' must be created manually in Supabase Dashboard
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
     const supabase = createClient(
       process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!
+      supabaseKey!
     );
 
-    // Check if bucket exists, create if not
+    // Use existing bucket (created manually in Supabase)
     const BUCKET_NAME = 'file-uploads';
-    const { data: buckets } = await supabase.storage.listBuckets();
-    const bucketExists = buckets?.some(bucket => bucket.name === BUCKET_NAME);
-    
-    if (!bucketExists) {
-      console.log(`Bucket '${BUCKET_NAME}' not found. Creating...`);
-      const { error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
-        public: true,
-        fileSizeLimit: 52428800, // 50MB
-        allowedMimeTypes: [
-          'text/csv',
-          'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'application/pdf',
-          'application/json',
-          'text/plain',
-          'application/xml',
-          'text/xml',
-          'application/sql'
-        ]
-      });
-      
-      if (createError) {
-        console.error('Failed to create bucket:', createError);
+    console.log(`Using existing bucket: ${BUCKET_NAME}`);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           success: false, 
