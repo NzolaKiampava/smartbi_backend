@@ -15,63 +15,33 @@ interface VercelResponse {
   setHeader(name: string, value: string): void;
 }
 
-// Helper function to add CORS headers to any response
-function addCorsHeaders(headers: Record<string, string>, corsHeaders: Record<string, string>): Record<string, string> {
-  return { ...corsHeaders, ...headers };
-}
+// CORS headers configuration
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://smartbi-rcs.vercel.app',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+  'Access-Control-Allow-Credentials': 'true',
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Configure CORS headers
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'https://smartbi-frontend.vercel.app',
-    'https://smartbi-rcs.vercel.app',
-    process.env.FRONTEND_URL
-  ].filter(Boolean);
-
-  const origin = req.headers.origin as string;
-  
-  console.log('🌐 Request method:', req.method);
-  console.log('🌐 Origin:', origin);
-  console.log('🌐 Allowed origins:', allowedOrigins);
-  
-  // Prepare CORS headers
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Content-Disposition',
-    'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400'
-  };
-  
-  // Set Access-Control-Allow-Origin
-  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost'))) {
-    corsHeaders['Access-Control-Allow-Origin'] = origin;
-    console.log('✅ Origin allowed:', origin);
-  } else {
-    // For production, using wildcard for compatibility
-    corsHeaders['Access-Control-Allow-Origin'] = '*';
-    console.log('⚠️ Using wildcard for origin:', origin);
-  }
-
-  // Handle preflight OPTIONS request for all routes
+  // Handle OPTIONS request first
   if (req.method === 'OPTIONS') {
-    console.log('🔍 OPTIONS preflight request');
-    console.log('📤 Sending CORS headers:', corsHeaders);
-    
-    // Return 200 status for preflight (not 204)
     res.writeHead(200, corsHeaders);
     res.end();
     return;
   }
+
+  // Set CORS headers for all responses
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value);
+  });
 
   // Initialize Supabase client
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    res.writeHead(500, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+    res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: false,
       message: 'Supabase configuration missing'
@@ -85,6 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const url = new URL(req.url || '', `http://${req.headers.host}`);
     const pathParts = url.pathname.split('/').filter(Boolean);
     
+    console.log('🔍 Request path:', pathParts);
+    console.log('🔍 Request method:', req.method);
+
     // GET /api/files - List all uploaded files
     if (req.method === 'GET' && pathParts.length === 2 && pathParts[0] === 'api' && pathParts[1] === 'files') {
       const limit = parseInt(url.searchParams.get('limit') || '50');
@@ -97,7 +70,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .order('uploaded_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-      // Filter by file type if provided
       if (fileType && fileType !== 'ALL') {
         query = query.eq('file_type', fileType);
       }
@@ -106,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) {
         console.error('Database query error:', error);
-        res.writeHead(500, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
           message: 'Failed to fetch files',
@@ -115,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
-      res.writeHead(200, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
         data: {
@@ -144,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (dbError || !fileRecord) {
         console.log('❌ File not found in database:', fileId);
-        res.writeHead(404, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+        res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
           message: 'File not found'
@@ -161,7 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (downloadError || !fileData) {
         console.error('❌ Storage download error:', downloadError);
-        res.writeHead(500, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
           message: 'Failed to download file from storage',
@@ -176,22 +148,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const arrayBuffer = await fileData.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // Set all headers including CORS before writeHead
-      const headers: Record<string, string> = {
+      // Set download headers
+      const downloadHeaders = {
         'Content-Type': fileRecord.mimetype || 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${fileRecord.original_name}"`,
-        'Content-Length': buffer.length.toString()
+        'Content-Length': buffer.length.toString(),
+        ...corsHeaders
       };
 
-      // Add CORS headers for download
-      if (allowedOrigins.includes(origin) || origin?.includes('localhost')) {
-        headers['Access-Control-Allow-Origin'] = origin;
-      } else {
-        headers['Access-Control-Allow-Origin'] = '*';
-      }
-      headers['Access-Control-Allow-Credentials'] = 'true';
-      
-      res.writeHead(200, headers);
+      res.writeHead(200, downloadHeaders);
       res.end(buffer);
       return;
     }
@@ -208,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          res.writeHead(404, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+          res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             success: false,
             message: 'File not found'
@@ -216,7 +181,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return;
         }
 
-        res.writeHead(500, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
           message: 'Failed to fetch file',
@@ -225,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
-      res.writeHead(200, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
         data: fileRecord
@@ -237,7 +202,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'DELETE' && pathParts.length === 3 && pathParts[0] === 'api' && pathParts[1] === 'files') {
       const fileId = pathParts[2];
 
-      // Get file metadata
       const { data: fileRecord, error: fetchError } = await supabase
         .from('file_uploads')
         .select('*')
@@ -245,7 +209,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single();
 
       if (fetchError || !fileRecord) {
-        res.writeHead(404, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+        res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
           message: 'File not found'
@@ -260,7 +224,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (storageError) {
         console.error('Storage delete error:', storageError);
-        // Continue anyway, we'll delete the database record
       }
 
       // Delete from database
@@ -271,7 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (dbError) {
         console.error('Database delete error:', dbError);
-        res.writeHead(500, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+        res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
           message: 'Failed to delete file record',
@@ -280,7 +243,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
-      res.writeHead(200, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         success: true,
         message: 'File deleted successfully',
@@ -290,15 +253,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Route not found
-    res.writeHead(404, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+    res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: false,
-      message: 'Route not found. Available routes: GET /api/files, GET /api/files/:id, GET /api/files/:id/download, DELETE /api/files/:id'
+      message: 'Route not found'
     }));
 
   } catch (error: any) {
     console.error('Files handler error:', error);
-    res.writeHead(500, addCorsHeaders({ 'Content-Type': 'application/json' }, corsHeaders));
+    res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       success: false,
       message: 'Internal server error',
