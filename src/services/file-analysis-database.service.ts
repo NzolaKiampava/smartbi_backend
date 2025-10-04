@@ -406,7 +406,7 @@ export class FileAnalysisDatabaseService {
       const { data, error } = await supabase
         .from('file_uploads')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('uploaded_at', { ascending: false });
 
       if (error) {
         console.error('Error getting all file uploads:', error);
@@ -422,7 +422,7 @@ export class FileAnalysisDatabaseService {
         size: row.size,
         path: row.path,
         fileType: row.file_type,
-        uploadedAt: row.created_at,
+        uploadedAt: row.uploaded_at,
         metadata: row.metadata || {}
       }));
     } catch (error) {

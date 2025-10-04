@@ -1,0 +1,64 @@
+{
+  "info": {
+    "name": "Teste Simples - Listar Ficheiros",
+    "description": "Teste simples para listar ficheiros do SmartBI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://smartbi-backend-psi.vercel.app",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Listar Todos os Ficheiros",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Verificar se status é 200",
+              "pm.test('Status code é 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Verificar se tem a estrutura correta",
+              "pm.test('Resposta tem estrutura de paginação', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('files');",
+              "    pm.expect(jsonData).to.have.property('total');",
+              "    pm.expect(jsonData).to.have.property('limit');",
+              "    pm.expect(jsonData).to.have.property('offset');",
+              "    pm.expect(jsonData).to.have.property('hasMore');",
+              "});",
+              "",
+              "// Verificar se files é um array",
+              "pm.test('Files é um array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.files).to.be.an('array');",
+              "});",
+              "",
+              "// Mostrar resultados no console",
+              "console.log('Total de ficheiros:', pm.response.json().total);",
+              "console.log('Ficheiros retornados:', pm.response.json().files.length);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/files",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "files"]
+        },
+        "description": "Lista todos os ficheiros armazenados no bucket file-uploads do Supabase"
+      },
+      "response": []
+    }
+  ]
+}
