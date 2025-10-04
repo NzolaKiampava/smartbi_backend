@@ -15,15 +15,51 @@ interface VercelResponse {
   setHeader(name: string, value: string): void;
 }
 
-// CORS headers configuration
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://smartbi-rcs.vercel.app',
-  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-  'Access-Control-Allow-Credentials': 'true',
-};
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const allowedOrigins = [
+    'https://smartbi-rcs.vercel.app',
+    'https://smartbi-frontend.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean) as string[];
+
+  const originHeader = req.headers.origin;
+  const origin = Array.isArray(originHeader) ? originHeader[0] : originHeader;
+
+  const acrHeaders = req.headers['access-control-request-headers'];
+  const requestedHeaders = Array.isArray(acrHeaders) ? acrHeaders.join(', ') : acrHeaders;
+
+  const defaultAllowedHeaders = 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Content-Disposition, Range, If-Modified-Since, If-None-Match';
+
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': requestedHeaders || defaultAllowedHeaders,
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
+  };
+
+  const isAllowedOrigin = origin && (allowedOrigins.includes(origin) || origin.includes('localhost'));
+  corsHeaders['Access-Control-Allow-Origin'] = isAllowedOrigin ? origin! : 'https://smartbi-rcs.vercel.app';
+
+  console.log('🌐 Request method:', req.method);
+  console.log('🌐 Origin:', origin);
+  console.log('🌐 Allowed origins:', allowedOrigins);
+  console.log('🌐 Access-Control-Request-Headers:', requestedHeaders);
+  console.log('🌐 Using Access-Control-Allow-Origin:', corsHeaders['Access-Control-Allow-Origin']);
+  console.log('🌐 Using Access-Control-Allow-Headers:', corsHeaders['Access-Control-Allow-Headers']);
+
+  const sendJson = (status: number, payload: Record<string, unknown>) => {
+    res.writeHead(status, {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+    });
+    res.end(JSON.stringify(payload));
+  };
+
   // Handle OPTIONS request first
   if (req.method === 'OPTIONS') {
     res.writeHead(200, corsHeaders);
@@ -41,18 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
+    sendJson(500, {
       success: false,
-      message: 'Supabase configuration missing'
-    }));
+      message: 'Supabase configuration missing',
+    });
     return;
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
-    const url = new URL(req.url || '', `http://${req.headers.host}`);
+  const hostHeader = req.headers.host;
+  const host = Array.isArray(hostHeader) ? hostHeader[0] : hostHeader || 'localhost';
+  const url = new URL(req.url || '/', `http://${host}`);
     const pathParts = url.pathname.split('/').filter(Boolean);
     
     console.log('🔍 Request path:', pathParts);
@@ -78,26 +115,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) {
         console.error('Database query error:', error);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        sendJson(500, {
           success: false,
           message: 'Failed to fetch files',
-          error: error.message
-        }));
+          error: error.message,
+        });
         return;
       }
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      sendJson(200, {
         success: true,
         data: {
           files: files || [],
           total: count || 0,
           limit,
           offset,
-          hasMore: (count || 0) > offset + limit
-        }
-      }));
+          hasMore: (count || 0) > offset + limit,
+        },
+      });
       return;
     }
 
@@ -116,11 +151,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (dbError || !fileRecord) {
         console.log('❌ File not found in database:', fileId);
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        sendJson(404, {
           success: false,
-          message: 'File not found'
-        }));
+          message: 'File not found',
+        });
         return;
       }
 
@@ -133,12 +167,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (downloadError || !fileData) {
         console.error('❌ Storage download error:', downloadError);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        sendJson(500, {
           success: false,
           message: 'Failed to download file from storage',
-          error: downloadError?.message
-        }));
+          error: downloadError?.message,
+        });
         return;
       }
 
@@ -173,28 +206,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
+          sendJson(404, {
             success: false,
-            message: 'File not found'
-          }));
+            message: 'File not found',
+          });
           return;
         }
 
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        sendJson(500, {
           success: false,
           message: 'Failed to fetch file',
-          error: error.message
-        }));
+          error: error.message,
+        });
         return;
       }
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      sendJson(200, {
         success: true,
-        data: fileRecord
-      }));
+        data: fileRecord,
+      });
       return;
     }
 
@@ -209,11 +239,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single();
 
       if (fetchError || !fileRecord) {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        sendJson(404, {
           success: false,
-          message: 'File not found'
-        }));
+          message: 'File not found',
+        });
         return;
       }
 
@@ -234,38 +263,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (dbError) {
         console.error('Database delete error:', dbError);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
+        sendJson(500, {
           success: false,
           message: 'Failed to delete file record',
-          error: dbError.message
-        }));
+          error: dbError.message,
+        });
         return;
       }
 
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
+      sendJson(200, {
         success: true,
         message: 'File deleted successfully',
-        data: { id: fileId }
-      }));
+        data: { id: fileId },
+      });
       return;
     }
 
     // Route not found
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
+    sendJson(404, {
       success: false,
-      message: 'Route not found'
-    }));
+      message: 'Route not found',
+    });
 
   } catch (error: any) {
     console.error('Files handler error:', error);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
+    sendJson(500, {
       success: false,
       message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error?.message : undefined
-    }));
+      error: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+    });
   }
 }
