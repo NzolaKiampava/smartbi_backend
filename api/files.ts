@@ -110,6 +110,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // GET /api/files/:id/download - Download a specific file
     if (req.method === 'GET' && pathParts.length === 4 && pathParts[0] === 'api' && pathParts[1] === 'files' && pathParts[3] === 'download') {
       const fileId = pathParts[2];
+      
+      console.log('📥 Download request for file ID:', fileId);
 
       // Get file metadata from database
       const { data: fileRecord, error: dbError } = await supabase
@@ -119,6 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .single();
 
       if (dbError || !fileRecord) {
+        console.log('❌ File not found in database:', fileId);
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
@@ -127,13 +130,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
+      console.log('✅ File found:', fileRecord.filename);
+
       // Download file from Supabase Storage
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('file-uploads')
         .download(fileRecord.filename);
 
       if (downloadError || !fileData) {
-        console.error('Storage download error:', downloadError);
+        console.error('❌ Storage download error:', downloadError);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           success: false,
@@ -143,16 +148,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return;
       }
 
+      console.log('✅ File downloaded from storage, size:', fileData.size);
+
       // Convert Blob to Buffer
       const arrayBuffer = await fileData.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      // Set appropriate headers for file download
-      res.setHeader('Content-Type', fileRecord.mimetype || 'application/octet-stream');
-      res.setHeader('Content-Disposition', `attachment; filename="${fileRecord.original_name}"`);
-      res.setHeader('Content-Length', buffer.length.toString());
+      // Set all headers including CORS before writeHead
+      const headers: Record<string, string> = {
+        'Content-Type': fileRecord.mimetype || 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${fileRecord.original_name}"`,
+        'Content-Length': buffer.length.toString()
+      };
+
+      // Add CORS headers for download
+      if (allowedOrigins.includes(origin) || origin?.includes('localhost')) {
+        headers['Access-Control-Allow-Origin'] = origin;
+      } else {
+        headers['Access-Control-Allow-Origin'] = '*';
+      }
+      headers['Access-Control-Allow-Credentials'] = 'true';
       
-      res.writeHead(200);
+      res.writeHead(200, headers);
       res.end(buffer);
       return;
     }
