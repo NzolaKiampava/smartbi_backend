@@ -33,22 +33,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const origin = req.headers.origin as string;
   
+  console.log('🌐 Request method:', req.method);
+  console.log('🌐 Origin:', origin);
+  console.log('🌐 Allowed origins:', allowedOrigins);
+  
   // Prepare CORS headers
   const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'GET, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Allow-Credentials': 'true'
+    'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Content-Disposition',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400'
   };
   
-  if (allowedOrigins.includes(origin) || origin?.includes('localhost')) {
+  // Set Access-Control-Allow-Origin
+  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost'))) {
     corsHeaders['Access-Control-Allow-Origin'] = origin;
+    console.log('✅ Origin allowed:', origin);
   } else {
+    // For production, using wildcard for compatibility
     corsHeaders['Access-Control-Allow-Origin'] = '*';
+    console.log('⚠️ Using wildcard for origin:', origin);
   }
 
-  // Handle preflight OPTIONS request
+  // Handle preflight OPTIONS request for all routes
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, corsHeaders);
+    console.log('🔍 OPTIONS preflight request');
+    console.log('📤 Sending CORS headers:', corsHeaders);
+    
+    // Return 200 status for preflight (not 204)
+    res.writeHead(200, corsHeaders);
     res.end();
     return;
   }
