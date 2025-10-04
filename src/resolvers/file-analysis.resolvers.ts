@@ -19,6 +19,7 @@ import { FileAnalysisDatabaseService } from '../services/file-analysis-database.
 import { GeminiAIService } from '../services/gemini-ai.service';
 import { FileParserService } from '../services/file-parser.service';
 import { generateId } from '../utils/uuid';
+import { supabaseAdmin } from '../config/database';
 
 export class FileAnalysisResolvers {
   private fileUploadService: FileUploadService;
@@ -86,11 +87,28 @@ export class FileAnalysisResolvers {
           return await this.databaseService.getFileUpload(id);
         },
 
-        listFileUploads: async (_: any, { limit, offset }: { limit?: number; offset?: number }) => {
+        listFileUploads: async (_: any, { limit, offset, fileType }: { limit?: number; offset?: number; fileType?: string }) => {
           const allFiles = await this.databaseService.getAllFileUploads();
+          
+          // Filter by file type if specified
+          let filteredFiles = allFiles;
+          if (fileType && fileType !== 'ALL') {
+            filteredFiles = allFiles.filter((file: any) => file.fileType === fileType);
+          }
+          
           const start = offset || 0;
           const end = start + (limit || 20);
-          return allFiles.slice(start, end);
+          const files = filteredFiles.slice(start, end);
+          const total = filteredFiles.length;
+          const hasMore = end < total;
+          
+          return {
+            files,
+            total,
+            limit: limit || 20,
+            offset: start,
+            hasMore
+          };
         },
 
         listAnalysisReports: async (_: any, { limit, offset }: { limit?: number; offset?: number }) => {
@@ -356,25 +374,73 @@ export class FileAnalysisResolvers {
         },
 
         deleteFileUpload: async (_: any, { id }: { id: string }) => {
-          const fileUpload = await this.databaseService.getFileUpload(id);
-          if (!fileUpload) {
-            throw new GraphQLError('File upload not found');
-          }
+          try {
+            // Get file upload record to get filename
+            const fileUpload = await this.databaseService.getFileUpload(id);
+            if (!fileUpload) {
+              throw new GraphQLError('File upload not found');
+            }
 
-          // Delete from database (implement delete method in service)
-          // For now, return success (would need to implement delete in database service)
-          return { success: true, message: 'File upload deleted successfully' };
+            // Delete from Supabase Storage
+            const { error: storageError } = await supabaseAdmin.storage
+              .from('file-uploads')
+              .remove([fileUpload.filename]);
+
+            // Continue even if storage delete fails (file might already be deleted)
+            if (storageError) {
+              console.warn('Storage delete warning:', storageError.message);
+            }
+
+            // Delete from database
+            const { error: dbError } = await supabaseAdmin
+              .from('file_uploads')
+              .delete()
+              .eq('id', id);
+
+            if (dbError) {
+              throw new GraphQLError(`Failed to delete file from database: ${dbError.message}`);
+            }
+
+            return true;
+          } catch (error) {
+            console.error('Delete file upload error:', error);
+            if (error instanceof GraphQLError) {
+              throw error;
+            }
+            throw new GraphQLError(`Failed to delete file upload: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         },
 
         updateFileMetadata: async (_: any, { id, metadata }: { id: string; metadata: Record<string, any> }) => {
-          const fileUpload = await this.databaseService.getFileUpload(id);
-          if (!fileUpload) {
-            throw new GraphQLError('File upload not found');
-          }
+          try {
+            const fileUpload = await this.databaseService.getFileUpload(id);
+            if (!fileUpload) {
+              throw new GraphQLError('File upload not found');
+            }
 
-          // Update metadata in database (implement update method in service)
-          // For now, return the file upload with updated metadata
-          return { ...fileUpload, metadata: { ...fileUpload.metadata, ...metadata } };
+            // Merge existing metadata with new metadata
+            const updatedMetadata = { ...fileUpload.metadata, ...metadata };
+
+            // Update in database
+            const { data, error } = await supabaseAdmin
+              .from('file_uploads')
+              .update({ metadata: updatedMetadata })
+              .eq('id', id)
+              .select()
+              .single();
+
+            if (error) {
+              throw new GraphQLError(`Failed to update file metadata: ${error.message}`);
+            }
+
+            return data;
+          } catch (error) {
+            console.error('Update file metadata error:', error);
+            if (error instanceof GraphQLError) {
+              throw error;
+            }
+            throw new GraphQLError(`Failed to update file metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         }
       },
 

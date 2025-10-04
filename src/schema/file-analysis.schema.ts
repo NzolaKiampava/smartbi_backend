@@ -201,10 +201,18 @@ export const fileAnalysisTypeDefs = gql`
     expiresAt: DateTime!
   }
 
+  type FileUploadList {
+    files: [FileUpload!]!
+    total: Int!
+    limit: Int!
+    offset: Int!
+    hasMore: Boolean!
+  }
+
   type Query {
     # File Uploads
     getFileUpload(id: ID!): FileUpload
-    listFileUploads(limit: Int = 20, offset: Int = 0): [FileUpload!]!
+    listFileUploads(limit: Int = 20, offset: Int = 0, fileType: FileType): FileUploadList!
     
     # Analysis Reports
     getAnalysisReport(id: ID!): AnalysisReport

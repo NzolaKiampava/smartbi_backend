@@ -1,0 +1,663 @@
+{
+  "info": {
+    "name": "SmartBI - File Management API",
+    "description": "Coleção de testes para APIs de gestão de ficheiros (listar, visualizar, download, deletar)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "prodUrl",
+      "value": "https://smartbi-backend-psi.vercel.app",
+      "type": "string"
+    },
+    {
+      "key": "fileId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "REST API Tests",
+      "item": [
+        {
+          "name": "1. List All Files (Default Pagination)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has pagination structure', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('files');",
+                  "    pm.expect(jsonData).to.have.property('total');",
+                  "    pm.expect(jsonData).to.have.property('limit');",
+                  "    pm.expect(jsonData).to.have.property('offset');",
+                  "    pm.expect(jsonData).to.have.property('hasMore');",
+                  "});",
+                  "",
+                  "pm.test('Files is an array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.files).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Save first file ID for later tests', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.files.length > 0) {",
+                  "        pm.collectionVariables.set('fileId', jsonData.files[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. List Files with Custom Pagination (limit=10, offset=0)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response limit is 10', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.limit).to.eql(10);",
+                  "});",
+                  "",
+                  "pm.test('Response offset is 0', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.offset).to.eql(0);",
+                  "});",
+                  "",
+                  "pm.test('Files array has max 10 items', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.files.length).to.be.at.most(10);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. List Files with File Type Filter (CSV)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All files are CSV type', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.files.forEach(function(file) {",
+                  "        pm.expect(file.file_type).to.eql('CSV');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files?fileType=CSV",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"],
+              "query": [
+                {
+                  "key": "fileType",
+                  "value": "CSV"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. List Files with File Type Filter (EXCEL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All files are EXCEL type', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    jsonData.files.forEach(function(file) {",
+                  "        pm.expect(file.file_type).to.eql('EXCEL');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files?fileType=EXCEL",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"],
+              "query": [
+                {
+                  "key": "fileType",
+                  "value": "EXCEL"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Get Single File Metadata by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains file metadata', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('filename');",
+                  "    pm.expect(jsonData).to.have.property('original_name');",
+                  "    pm.expect(jsonData).to.have.property('mimetype');",
+                  "    pm.expect(jsonData).to.have.property('size');",
+                  "    pm.expect(jsonData).to.have.property('file_type');",
+                  "});",
+                  "",
+                  "pm.test('File ID matches requested ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.eql(pm.collectionVariables.get('fileId'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "6. Get File Metadata - Not Found (Invalid ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates file not found', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "00000000-0000-0000-0000-000000000000"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Download File by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has Content-Disposition header', function () {",
+                  "    pm.response.to.have.header('Content-Disposition');",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition indicates attachment', function () {",
+                  "    var header = pm.response.headers.get('Content-Disposition');",
+                  "    pm.expect(header).to.include('attachment');",
+                  "});",
+                  "",
+                  "pm.test('Response has Content-Type header', function () {",
+                  "    pm.response.to.have.header('Content-Type');",
+                  "});",
+                  "",
+                  "pm.test('Response has Content-Length header', function () {",
+                  "    pm.response.to.have.header('Content-Length');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "download"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "8. Download File - Not Found (Invalid ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates file not found', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/00000000-0000-0000-0000-000000000000/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "00000000-0000-0000-0000-000000000000", "download"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "9. Delete File by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates successful deletion', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('deleted');",
+                  "});",
+                  "",
+                  "pm.test('Response contains deleted file ID', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.fileId).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10. Delete File - Not Found (Invalid ID)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates file not found', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.include('not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/00000000-0000-0000-0000-000000000000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "00000000-0000-0000-0000-000000000000"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GraphQL API Tests",
+      "item": [
+        {
+          "name": "1. List Files (GraphQL - Default Pagination)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.exist;",
+                  "    pm.expect(jsonData.data.listFileUploads).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Response has pagination structure', function () {",
+                  "    var data = pm.response.json().data.listFileUploads;",
+                  "    pm.expect(data).to.have.property('files');",
+                  "    pm.expect(data).to.have.property('total');",
+                  "    pm.expect(data).to.have.property('limit');",
+                  "    pm.expect(data).to.have.property('offset');",
+                  "    pm.expect(data).to.have.property('hasMore');",
+                  "});",
+                  "",
+                  "pm.test('Save first file ID for later tests', function () {",
+                  "    var data = pm.response.json().data.listFileUploads;",
+                  "    if (data.files.length > 0) {",
+                  "        pm.collectionVariables.set('fileId', data.files[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query ListFileUploads($limit: Int, $offset: Int) {\n  listFileUploads(limit: $limit, offset: $offset) {\n    files {\n      id\n      filename\n      originalName\n      mimetype\n      size\n      fileType\n      uploadedAt\n      path\n    }\n    total\n    limit\n    offset\n    hasMore\n  }\n}",
+                "variables": "{\n  \"limit\": 20,\n  \"offset\": 0\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "2. List Files (GraphQL - With File Type Filter)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All files are CSV type', function () {",
+                  "    var data = pm.response.json().data.listFileUploads;",
+                  "    data.files.forEach(function(file) {",
+                  "        pm.expect(file.fileType).to.eql('CSV');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query ListFileUploadsByType($fileType: FileType, $limit: Int, $offset: Int) {\n  listFileUploads(fileType: $fileType, limit: $limit, offset: $offset) {\n    files {\n      id\n      filename\n      originalName\n      fileType\n      uploadedAt\n    }\n    total\n    limit\n    offset\n    hasMore\n  }\n}",
+                "variables": "{\n  \"fileType\": \"CSV\",\n  \"limit\": 10,\n  \"offset\": 0\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Single File (GraphQL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains file data', function () {",
+                  "    var data = pm.response.json().data.getFileUpload;",
+                  "    pm.expect(data).to.exist;",
+                  "    pm.expect(data.id).to.exist;",
+                  "    pm.expect(data.filename).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetFileUpload($id: ID!) {\n  getFileUpload(id: $id) {\n    id\n    filename\n    originalName\n    mimetype\n    size\n    fileType\n    encoding\n    path\n    uploadedAt\n    metadata\n  }\n}",
+                "variables": "{\n  \"id\": \"{{fileId}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "4. Update File Metadata (GraphQL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains updated file', function () {",
+                  "    var data = pm.response.json().data.updateFileMetadata;",
+                  "    pm.expect(data).to.exist;",
+                  "    pm.expect(data.metadata).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation UpdateFileMetadata($id: ID!, $metadata: JSON!) {\n  updateFileMetadata(id: $id, metadata: $metadata) {\n    id\n    filename\n    originalName\n    metadata\n  }\n}",
+                "variables": "{\n  \"id\": \"{{fileId}}\",\n  \"metadata\": {\n    \"updated_by_test\": true,\n    \"test_timestamp\": \"{{$timestamp}}\"\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "5. Delete File (GraphQL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response indicates successful deletion', function () {",
+                  "    var data = pm.response.json().data.deleteFileUpload;",
+                  "    pm.expect(data).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation DeleteFileUpload($id: ID!) {\n  deleteFileUpload(id: $id)\n}",
+                "variables": "{\n  \"id\": \"{{fileId}}\"\n}"
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": ["{{baseUrl}}"],
+              "path": ["graphql"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
