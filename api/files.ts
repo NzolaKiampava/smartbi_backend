@@ -181,10 +181,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const arrayBuffer = await fileData.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
+      const originalName = fileRecord.original_name || fileRecord.filename;
+      const asciiName = originalName.replace(/[^\x20-\x7E]/g, '_');
+      let contentDisposition = `attachment; filename="${asciiName}"`;
+      if (asciiName !== originalName) {
+        contentDisposition += `; filename*=UTF-8''${encodeURIComponent(originalName)}`;
+      }
+
       // Set download headers
       const downloadHeaders = {
         'Content-Type': fileRecord.mimetype || 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${fileRecord.original_name}"`,
+        'Content-Disposition': contentDisposition,
         'Content-Length': buffer.length.toString(),
         ...corsHeaders
       };
