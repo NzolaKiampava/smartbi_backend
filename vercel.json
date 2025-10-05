@@ -30,5 +30,15 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/files/:id/download",
+      "destination": "/api/files"
+    },
+    {
+      "source": "/api/files/:id",
+      "destination": "/api/files"
+    }
   ]
 }
