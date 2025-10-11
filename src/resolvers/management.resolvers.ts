@@ -175,6 +175,46 @@ export const managementResolvers = {
 
   Mutation: {
     // User Management
+    createUser: async (_: any, { input }: { input: { email: string; firstName: string; lastName: string; role: UserRole; password: string } }, context: GraphQLContext) => {
+      try {
+        if (!context.isAuthenticated) {
+          throw new Error('Authentication required');
+        }
+
+        // Only company admins (for their company) or super admins can create users
+        const canCreate = 
+          context.user?.role === UserRole.SUPER_ADMIN ||
+          context.user?.role === UserRole.COMPANY_ADMIN;
+
+        if (!canCreate) {
+          throw new Error('Insufficient permissions');
+        }
+
+        // Use company from context (authenticated user's company)
+        const companyId = context.company?.id;
+        if (!companyId) {
+          throw new Error('Company context not found');
+        }
+
+        const user = await ManagementService.createUser({
+          ...input,
+          companyId,
+        });
+        
+        return {
+          success: true,
+          data: user,
+          message: 'User created successfully',
+        };
+      } catch (error) {
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : 'Failed to create user',
+          errors: [error instanceof Error ? error.message : 'Unknown error'],
+        };
+      }
+    },
+
     updateUser: async (_: any, { id, input }: { id: string; input: UpdateUserInput }, context: GraphQLContext) => {
       try {
         if (!context.isAuthenticated) {

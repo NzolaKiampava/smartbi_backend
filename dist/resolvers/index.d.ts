@@ -35,10 +35,17 @@ export declare const resolvers: {
         getFileUpload: (_: any, { id }: {
             id: string;
         }) => Promise<import("../types/file-analysis").FileUpload | null>;
-        listFileUploads: (_: any, { limit, offset }: {
+        listFileUploads: (_: any, { limit, offset, fileType }: {
             limit?: number;
             offset?: number;
-        }) => Promise<import("../types/file-analysis").FileUpload[]>;
+            fileType?: string;
+        }) => Promise<{
+            files: import("../types/file-analysis").FileUpload[];
+            total: number;
+            limit: number;
+            offset: number;
+            hasMore: boolean;
+        }>;
         listAnalysisReports: (_: any, { limit, offset }: {
             limit?: number;
             offset?: number;
@@ -224,28 +231,11 @@ export declare const resolvers: {
         }) => Promise<import("../types/file-analysis").ReportExport>;
         deleteFileUpload: (_: any, { id }: {
             id: string;
-        }) => Promise<{
-            success: boolean;
-            message: string;
-        }>;
+        }) => Promise<boolean>;
         updateFileMetadata: (_: any, { id, metadata }: {
             id: string;
             metadata: Record<string, any>;
-        }) => Promise<{
-            metadata: {
-                [x: string]: any;
-            };
-            id: string;
-            filename: string;
-            originalName: string;
-            mimetype: string;
-            encoding: string;
-            size: number;
-            path: string;
-            fileType: import("../types/file-analysis").FileType;
-            uploadedAt: Date;
-            analysisReport?: import("../types/file-analysis").AnalysisReport;
-        }>;
+        }) => Promise<any>;
         createDataConnection: (_: any, { input }: {
             input: import("../types/data-query").DataConnectionInput;
         }, context: import("../types/graphql").GraphQLContext) => Promise<import("../types/data-query").DataConnection>;

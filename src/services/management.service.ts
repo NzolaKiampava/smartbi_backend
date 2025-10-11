@@ -1,6 +1,18 @@
 import { supabase } from '../config/database';
 import { User, Company, UserRole, SubscriptionTier } from '../types/auth';
 import { PasswordService } from '../utils/password';
+import { generateId } from '../utils/uuid';
+
+export interface CreateUserInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  companyId: string;
+  isActive?: boolean;
+  emailVerified?: boolean;
+}
 
 export interface UpdateUserInput {
   firstName?: string;
@@ -203,6 +215,78 @@ export class ManagementService {
       total: count || 0,
       hasMore: (count || 0) > offset + limit,
     };
+  }
+
+  static async createUser(input: CreateUserInput): Promise<User> {
+    const { email, password, firstName, lastName, role, companyId, isActive = true, emailVerified = false } = input;
+
+    // Validate password strength
+    const passwordValidation = PasswordService.validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      throw new Error(`Password validation failed: ${passwordValidation.errors.join(', ')}`);
+    }
+
+    // Check if email already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
+
+    if (existingUser) {
+      throw new Error('Email already registered');
+    }
+
+    // Verify company exists
+    const { data: company } = await supabase
+      .from('companies')
+      .select('id, max_users')
+      .eq('id', companyId)
+      .single();
+
+    if (!company) {
+      throw new Error('Company not found');
+    }
+
+    // Check user limit for the company
+    const { count } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId);
+
+    if (count && count >= company.max_users) {
+      throw new Error(`Company has reached maximum user limit (${company.max_users})`);
+    }
+
+    // Hash password
+    const passwordHash = await PasswordService.hash(password);
+
+    // Create user
+    const userId = generateId();
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        email: email.toLowerCase(),
+        password_hash: passwordHash,
+        first_name: firstName,
+        last_name: lastName,
+        role,
+        company_id: companyId,
+        is_active: isActive,
+        email_verified: emailVerified,
+      })
+      .select(`
+        *,
+        companies (*)
+      `)
+      .single();
+
+    if (userError || !userData) {
+      throw new Error(`Failed to create user: ${userError?.message || 'Unknown error'}`);
+    }
+
+    return this.mapUserData(userData);
   }
 
   static async updateUser(id: string, input: UpdateUserInput): Promise<User> {
