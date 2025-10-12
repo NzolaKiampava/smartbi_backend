@@ -1,4 +1,14 @@
 import { User, Company, UserRole, SubscriptionTier } from '../types/auth';
+export interface CreateUserInput {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role: UserRole;
+    companyId: string;
+    isActive?: boolean;
+    emailVerified?: boolean;
+}
 export interface UpdateUserInput {
     firstName?: string;
     lastName?: string;
@@ -46,6 +56,7 @@ export declare class ManagementService {
         total: number;
         hasMore: boolean;
     }>;
+    static createUser(input: CreateUserInput): Promise<User>;
     static updateUser(id: string, input: UpdateUserInput): Promise<User>;
     static updateUserSettings(userId: string, input: UpdateUserSettingsInput): Promise<User>;
     static deleteUser(id: string): Promise<User>;

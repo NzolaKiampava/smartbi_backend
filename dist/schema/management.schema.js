@@ -16,6 +16,14 @@ exports.managementTypeDefs = `#graphql
   }
 
   # Input Types for Updates
+  input CreateUserInput {
+    email: String!
+    firstName: String!
+    lastName: String!
+    role: UserRole!
+    password: String!
+  }
+
   input UpdateUserInput {
     firstName: String
     lastName: String
@@ -90,6 +98,7 @@ exports.managementTypeDefs = `#graphql
 
   extend type Mutation {
     # User Management
+    createUser(input: CreateUserInput!): UserResponse!
     updateUser(id: ID!, input: UpdateUserInput!): UserResponse!
     deleteUser(id: ID!): UserResponse!
     updateUserSettings(input: UpdateUserSettingsInput!): UserResponse!

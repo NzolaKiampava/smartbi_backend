@@ -145,6 +145,38 @@ exports.managementResolvers = {
         },
     },
     Mutation: {
+        createUser: async (_, { input }, context) => {
+            try {
+                if (!context.isAuthenticated) {
+                    throw new Error('Authentication required');
+                }
+                const canCreate = context.user?.role === auth_1.UserRole.SUPER_ADMIN ||
+                    context.user?.role === auth_1.UserRole.COMPANY_ADMIN;
+                if (!canCreate) {
+                    throw new Error('Insufficient permissions');
+                }
+                const companyId = context.company?.id;
+                if (!companyId) {
+                    throw new Error('Company context not found');
+                }
+                const user = await management_service_1.ManagementService.createUser({
+                    ...input,
+                    companyId,
+                });
+                return {
+                    success: true,
+                    data: user,
+                    message: 'User created successfully',
+                };
+            }
+            catch (error) {
+                return {
+                    success: false,
+                    message: error instanceof Error ? error.message : 'Failed to create user',
+                    errors: [error instanceof Error ? error.message : 'Unknown error'],
+                };
+            }
+        },
         updateUser: async (_, { id, input }, context) => {
             try {
                 if (!context.isAuthenticated) {

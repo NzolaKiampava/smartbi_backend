@@ -18,20 +18,20 @@ class BaseAdapter {
             'DROP', 'DELETE', 'UPDATE', 'INSERT', 'TRUNCATE', 'ALTER',
             'CREATE', 'GRANT', 'REVOKE', 'EXEC', 'EXECUTE'
         ];
-        const upperQuery = query.toUpperCase();
         for (const keyword of dangerousKeywords) {
-            if (upperQuery.includes(keyword)) {
+            const wordBoundaryPattern = new RegExp(`\\b${keyword}\\b`, 'i');
+            if (wordBoundaryPattern.test(query)) {
                 throw new Error(`Query contains prohibited keyword: ${keyword}`);
             }
         }
         const suspiciousPatterns = [
-            /;\s*DROP/i,
-            /;\s*DELETE/i,
-            /;\s*UPDATE/i,
-            /;\s*INSERT/i,
-            /UNION\s+SELECT/i,
-            /LOAD_FILE/i,
-            /INTO\s+OUTFILE/i
+            /;\s*DROP\b/i,
+            /;\s*DELETE\b/i,
+            /;\s*UPDATE\b/i,
+            /;\s*INSERT\b/i,
+            /\bUNION\s+SELECT\b/i,
+            /\bLOAD_FILE\b/i,
+            /\bINTO\s+OUTFILE\b/i
         ];
         for (const pattern of suspiciousPatterns) {
             if (pattern.test(query)) {

@@ -96,6 +96,25 @@ export declare const managementResolvers: {
         }>;
     };
     Mutation: {
+        createUser: (_: any, { input }: {
+            input: {
+                email: string;
+                firstName: string;
+                lastName: string;
+                role: UserRole;
+                password: string;
+            };
+        }, context: GraphQLContext) => Promise<{
+            success: boolean;
+            data: import("../types/auth").User;
+            message: string;
+            errors?: undefined;
+        } | {
+            success: boolean;
+            message: string;
+            errors: string[];
+            data?: undefined;
+        }>;
         updateUser: (_: any, { id, input }: {
             id: string;
             input: UpdateUserInput;

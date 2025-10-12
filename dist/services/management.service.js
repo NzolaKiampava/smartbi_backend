@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ManagementService = void 0;
 const database_1 = require("../config/database");
 const password_1 = require("../utils/password");
+const uuid_1 = require("../utils/uuid");
 class ManagementService {
     static async getCompanies(pagination = {}) {
         const { limit = 10, offset = 0, search } = pagination;
@@ -140,6 +141,60 @@ class ManagementService {
             total: count || 0,
             hasMore: (count || 0) > offset + limit,
         };
+    }
+    static async createUser(input) {
+        const { email, password, firstName, lastName, role, companyId, isActive = true, emailVerified = false } = input;
+        const passwordValidation = password_1.PasswordService.validatePasswordStrength(password);
+        if (!passwordValidation.isValid) {
+            throw new Error(`Password validation failed: ${passwordValidation.errors.join(', ')}`);
+        }
+        const { data: existingUser } = await database_1.supabase
+            .from('users')
+            .select('id')
+            .eq('email', email.toLowerCase())
+            .single();
+        if (existingUser) {
+            throw new Error('Email already registered');
+        }
+        const { data: company } = await database_1.supabase
+            .from('companies')
+            .select('id, max_users')
+            .eq('id', companyId)
+            .single();
+        if (!company) {
+            throw new Error('Company not found');
+        }
+        const { count } = await database_1.supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('company_id', companyId);
+        if (count && count >= company.max_users) {
+            throw new Error(`Company has reached maximum user limit (${company.max_users})`);
+        }
+        const passwordHash = await password_1.PasswordService.hash(password);
+        const userId = (0, uuid_1.generateId)();
+        const { data: userData, error: userError } = await database_1.supabase
+            .from('users')
+            .insert({
+            id: userId,
+            email: email.toLowerCase(),
+            password_hash: passwordHash,
+            first_name: firstName,
+            last_name: lastName,
+            role,
+            company_id: companyId,
+            is_active: isActive,
+            email_verified: emailVerified,
+        })
+            .select(`
+        *,
+        companies (*)
+      `)
+            .single();
+        if (userError || !userData) {
+            throw new Error(`Failed to create user: ${userError?.message || 'Unknown error'}`);
+        }
+        return this.mapUserData(userData);
     }
     static async updateUser(id, input) {
         const updateData = {};

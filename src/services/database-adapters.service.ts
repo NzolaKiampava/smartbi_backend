@@ -30,28 +30,31 @@ export abstract class BaseAdapter implements DatabaseAdapter {
   abstract executeQuery(config: DataConnectionConfig, query: string): Promise<any[]>;
 
   sanitizeQuery(query: string): string {
-    // Remove dangerous keywords
+    // Remove dangerous keywords - usando word boundaries para evitar falsos positivos
     const dangerousKeywords = [
       'DROP', 'DELETE', 'UPDATE', 'INSERT', 'TRUNCATE', 'ALTER',
       'CREATE', 'GRANT', 'REVOKE', 'EXEC', 'EXECUTE'
     ];
 
-    const upperQuery = query.toUpperCase();
+    // Verifica se as palavras perigosas aparecem como palavras completas (não parte de outras palavras)
     for (const keyword of dangerousKeywords) {
-      if (upperQuery.includes(keyword)) {
+      // Usa word boundary (\b) para garantir que é uma palavra completa
+      // Exemplo: detecta "UPDATE" mas não "updated_at" ou "last_update"
+      const wordBoundaryPattern = new RegExp(`\\b${keyword}\\b`, 'i');
+      if (wordBoundaryPattern.test(query)) {
         throw new Error(`Query contains prohibited keyword: ${keyword}`);
       }
     }
 
     // Basic SQL injection protection
     const suspiciousPatterns = [
-      /;\s*DROP/i,
-      /;\s*DELETE/i,
-      /;\s*UPDATE/i,
-      /;\s*INSERT/i,
-      /UNION\s+SELECT/i,
-      /LOAD_FILE/i,
-      /INTO\s+OUTFILE/i
+      /;\s*DROP\b/i,
+      /;\s*DELETE\b/i,
+      /;\s*UPDATE\b/i,
+      /;\s*INSERT\b/i,
+      /\bUNION\s+SELECT\b/i,
+      /\bLOAD_FILE\b/i,
+      /\bINTO\s+OUTFILE\b/i
     ];
 
     for (const pattern of suspiciousPatterns) {

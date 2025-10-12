@@ -277,6 +277,25 @@ export declare const resolvers: {
             deletedCount: number;
             message: string;
         }>;
+        createUser: (_: any, { input }: {
+            input: {
+                email: string;
+                firstName: string;
+                lastName: string;
+                role: import("../types/auth").UserRole;
+                password: string;
+            };
+        }, context: import("../types/graphql").GraphQLContext) => Promise<{
+            success: boolean;
+            data: import("../types/auth").User;
+            message: string;
+            errors?: undefined;
+        } | {
+            success: boolean;
+            message: string;
+            errors: string[];
+            data?: undefined;
+        }>;
         updateUser: (_: any, { id, input }: {
             id: string;
             input: import("../services/management.service").UpdateUserInput;
